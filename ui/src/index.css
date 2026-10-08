@@ -1,0 +1,301 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apple SF-inspired Design System - Calm, reflective intake experience */
+
+@layer base {
+  :root {
+    /* Core backgrounds - soft, airy whites */
+    --background: 220 20% 98%;
+    --foreground: 220 25% 10%;
+
+    /* Card surfaces with subtle warmth */
+    --card: 0 0% 100%;
+    --card-foreground: 220 25% 10%;
+
+    /* Popovers and overlays */
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 25% 10%;
+
+    /* Primary - calm blue for trust and focus */
+    --primary: 215 80% 55%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - soft gray surfaces */
+    --secondary: 220 15% 94%;
+    --secondary-foreground: 220 20% 25%;
+
+    /* Muted elements */
+    --muted: 220 15% 92%;
+    --muted-foreground: 220 10% 50%;
+
+    /* Accent - subtle highlight */
+    --accent: 215 60% 95%;
+    --accent-foreground: 215 80% 40%;
+
+    /* Destructive - soft red for errors */
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Borders and inputs */
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 215 80% 55%;
+
+    --radius: 1rem;
+
+    /* Floating orb colors */
+    --orb-1: 215 70% 85%;
+    --orb-2: 250 60% 88%;
+    --orb-3: 190 50% 85%;
+
+    /* Success state */
+    --success: 155 60% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Sidebar tokens */
+    --sidebar-background: 220 20% 98%;
+    --sidebar-foreground: 220 25% 20%;
+    --sidebar-primary: 215 80% 55%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 215 60% 95%;
+    --sidebar-accent-foreground: 215 80% 40%;
+    --sidebar-border: 220 15% 88%;
+    --sidebar-ring: 215 80% 55%;
+  }
+
+  .dark {
+    /* Dark mode - deep, calm navy tones */
+    --background: 225 30% 8%;
+    --foreground: 220 15% 92%;
+
+    --card: 225 25% 12%;
+    --card-foreground: 220 15% 92%;
+
+    --popover: 225 25% 12%;
+    --popover-foreground: 220 15% 92%;
+
+    --primary: 215 75% 60%;
+    --primary-foreground: 220 30% 8%;
+
+    --secondary: 225 20% 18%;
+    --secondary-foreground: 220 15% 85%;
+
+    --muted: 225 20% 16%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 215 40% 20%;
+    --accent-foreground: 215 75% 70%;
+
+    --destructive: 0 55% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 225 20% 18%;
+    --input: 225 20% 18%;
+    --ring: 215 75% 60%;
+
+    /* Dark floating orb colors */
+    --orb-1: 215 50% 25%;
+    --orb-2: 250 40% 28%;
+    --orb-3: 190 35% 22%;
+
+    --success: 155 50% 45%;
+    --success-foreground: 0 0% 100%;
+
+    /* Dark sidebar */
+    --sidebar-background: 225 30% 8%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 215 75% 60%;
+    --sidebar-primary-foreground: 220 30% 8%;
+    --sidebar-accent: 215 40% 20%;
+    --sidebar-accent-foreground: 215 75% 70%;
+    --sidebar-border: 225 20% 18%;
+    --sidebar-ring: 215 75% 60%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Floating orb animations */
+@keyframes float-slow {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+@keyframes float-slower {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(-40px, -20px) scale(1.08);
+  }
+}
+
+@keyframes float-slowest {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(20px, 30px) scale(1.02);
+  }
+  75% {
+    transform: translate(-30px, -10px) scale(0.98);
+  }
+}
+
+/* Screen transition animations */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out-up {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* Pulse animation for loading states */
+@keyframes gentle-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Success checkmark animation */
+@keyframes draw-check {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Loading animation keyframes for AI cooking screen */
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-slower {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-slower {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@layer utilities {
+  .animate-float-slow {
+    animation: float-slow 25s ease-in-out infinite;
+  }
+  
+  .animate-float-slower {
+    animation: float-slower 30s ease-in-out infinite;
+  }
+  
+  .animate-float-slowest {
+    animation: float-slowest 35s ease-in-out infinite;
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out forwards;
+  }
+  
+  .animate-fade-out-up {
+    animation: fade-out-up 0.3s ease-in forwards;
+  }
+  
+  .animate-gentle-pulse {
+    animation: gentle-pulse 2s ease-in-out infinite;
+  }
+  
+  .animate-scale-in {
+    animation: scale-in 0.4s ease-out forwards;
+  }
+  
+  .animate-draw-check {
+    animation: draw-check 0.6s ease-out forwards;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 100;
+  }
+  
+  .animate-ping-slow {
+    animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  
+  .animate-ping-slower {
+    animation: ping-slower 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+    animation-delay: 0.5s;
+  }
+  
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+  
+  .animate-spin-slower {
+    animation: spin-slower 12s linear infinite;
+  }
+}

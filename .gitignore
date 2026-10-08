@@ -1,0 +1,28 @@
+# Dependencies and build output
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Secrets -- NOTHING in this family should ever be committed.
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+credentials.json
+
+# Runtime
+logs/
+*.log
+__pycache__/
+*.py[cod]
+
+# Local scratch
+scratchpad/
+tmp/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

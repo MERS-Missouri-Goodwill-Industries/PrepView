@@ -1,0 +1,949 @@
+{
+  "name": "Interview Practice - B-post-call-analysis",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "interview-report",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -720,
+        -160
+      ],
+      "id": "webhook-end-of-call-report",
+      "name": "Webhook - End Of Call Report"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// PHASE 2 STEP 1: observe, do not interpret.\n// The brief is explicit -- log the raw Vapi payload and inspect it before\n// building anything downstream. Nothing here assumes a schema; it surfaces a\n// shallow map of what actually arrived so the real shape can be read off an\n// execution, then keeps the untouched payload alongside it.\nconst raw = $input.first().json;\nconst body = raw.body !== undefined ? raw.body : raw;\nconst msg  = (body && body.message !== undefined) ? body.message : body;\n\nconst typeOf = (v) => Array.isArray(v) ? 'array[' + v.length + ']' : (v === null ? 'null' : typeof v);\n\nconst shape = {};\nif (msg && typeof msg === 'object') {\n  for (const k of Object.keys(msg)) {\n    const v = msg[k];\n    shape[k] = typeOf(v);\n    if (v && typeof v === 'object' && !Array.isArray(v)) {\n      shape[k] += ' {' + Object.keys(v).slice(0, 25).join(',') + '}';\n    }\n  }\n}\n\n// Probe the fields Workflow B will eventually need, without depending on them.\nconst probe = {\n  serverMessageType: msg && msg.type,\n  endedReason:       msg && msg.endedReason,\n  hasTranscript:     !!(msg && msg.transcript),\n  transcriptChars:   msg && msg.transcript ? String(msg.transcript).length : 0,\n  hasMessagesArray:  !!(msg && Array.isArray(msg.messages)),\n  hasArtifact:       !!(msg && msg.artifact),\n  hasRecordingUrl:   !!(msg && (msg.recordingUrl || (msg.artifact && msg.artifact.recordingUrl))),\n  hasSummary:        !!(msg && (msg.summary || (msg.analysis && msg.analysis.summary))),\n  durationSeconds:   msg && (msg.durationSeconds || msg.durationMs),\n  callId:            msg && msg.call && msg.call.id,\n  assistantId:       (msg && msg.assistant && msg.assistant.id) || (msg && msg.call && msg.call.assistantId) || null,\n  // The whole P1 question: does metadata survive the call boundary?\n  metadataFromAssistant: msg && msg.assistant && msg.assistant.metadata ? msg.assistant.metadata : null,\n  metadataFromCall:      msg && msg.call && msg.call.metadata ? msg.call.metadata : null,\n  metadataTopLevel:      msg && msg.metadata ? msg.metadata : null\n};\n\nprobe.metadataFound = !!(probe.metadataFromAssistant || probe.metadataFromCall || probe.metadataTopLevel);\nconst md = probe.metadataFromAssistant || probe.metadataFromCall || probe.metadataTopLevel || {};\nprobe.sessionId    = md.sessionId    || null;\nprobe.coachEmail   = md.coachEmail   || null;\nprobe.participantName = md.participantName || null;\n\nreturn [{ json: { receivedAt: new Date().toISOString(), probe, shape, raw } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        -160
+      ],
+      "id": "capture-raw-payload",
+      "name": "Capture Raw Payload"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// SAFETY: this project owns only assistants named `INT ...` and phone numbers\n// named `INTERVIEW-nn`. The same Vapi account may also run production phone\n// lines and alerting systems. Every filter below is a hard gate, not a heuristic.\n// See PLAYBOOK.md section 7 (pool ownership rule).\nconst ASSISTANT_OWNED = (name) => /^INT /.test(String(name || ''));\nconst NUMBER_OWNED    = (name) => /^INTERVIEW-\\d+$/.test(String(name || ''));\n\n// Decide what to release now that the call is over. Runs even if metadata did\n// not survive, because the assistantId alone is enough to tear down.\nconst p = $input.first().json.probe || {};\nconst assistantId = p.assistantId || null;\n\nreturn [{ json: {\n  assistantId,\n  sessionId: p.sessionId,\n  reason: 'end-of-call',\n  releasable: !!assistantId\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        -160
+      ],
+      "id": "extract-release-target",
+      "name": "Extract Release Target"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "releasable-check",
+              "leftValue": "={{ $json.releasable }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -64,
+        -160
+      ],
+      "id": "releasable-",
+      "name": "Releasable?"
+    },
+    {
+      "parameters": {
+        "url": "https://api.vapi.ai/phone-number",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        176,
+        -304
+      ],
+      "id": "vapi-get-numbers-release-",
+      "name": "Vapi - GET Numbers (release)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// SAFETY: this project owns only assistants named `INT ...` and phone numbers\n// named `INTERVIEW-nn`. The same Vapi account may also run production phone\n// lines and alerting systems. Every filter below is a hard gate, not a heuristic.\n// See PLAYBOOK.md section 7 (pool ownership rule).\nconst ASSISTANT_OWNED = (name) => /^INT /.test(String(name || ''));\nconst NUMBER_OWNED    = (name) => /^INTERVIEW-\\d+$/.test(String(name || ''));\n\n// Which pool number is currently bound to the assistant that just finished?\nconst target = $('Extract Release Target').first().json;\n\nconst items = $input.all();\nlet nums = (items.length === 1 && Array.isArray(items[0].json))\n  ? items[0].json\n  : items.map(i => i.json).filter(n => n && (n.id || n.number));\n\n// Only ever consider this project's own numbers.\nconst pool = nums.filter(n => NUMBER_OWNED(n.name));\nconst bound = pool.find(n => n.assistantId && n.assistantId === target.assistantId);\n\nreturn [{ json: {\n  assistantId: target.assistantId,\n  sessionId: target.sessionId,\n  phoneNumberId: bound ? bound.id : null,\n  phoneNumberName: bound ? bound.name : null,\n  hasNumber: !!bound\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        -224
+      ],
+      "id": "find-bound-number",
+      "name": "Find Bound Number"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "has-number-check",
+              "leftValue": "={{ $json.hasNumber }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        608,
+        -144
+      ],
+      "id": "has-bound-number-",
+      "name": "Has Bound Number?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.vapi.ai/phone-number/{{ $json.phoneNumberId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ assistantId: null }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        832,
+        -336
+      ],
+      "id": "vapi-unbind-number-release-",
+      "name": "Vapi - Unbind Number (release)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://api.vapi.ai/assistant/{{ $('Find Bound Number').first().json.assistantId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1072,
+        -224
+      ],
+      "id": "vapi-delete-assistant-release-",
+      "name": "Vapi - Delete Assistant (release)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -720,
+        208
+      ],
+      "id": "schedule-sweep-orphans",
+      "name": "Schedule - Sweep Orphans"
+    },
+    {
+      "parameters": {
+        "url": "https://api.vapi.ai/phone-number",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -496,
+        208
+      ],
+      "id": "vapi-get-numbers-sweep-",
+      "name": "Vapi - GET Numbers (sweep)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// SAFETY: this project owns only assistants named `INT ...` and phone numbers\n// named `INTERVIEW-nn`. The same Vapi account may also run production phone\n// lines and alerting systems. Every filter below is a hard gate, not a heuristic.\n// See PLAYBOOK.md section 7 (pool ownership rule).\nconst ASSISTANT_OWNED = (name) => /^INT /.test(String(name || ''));\nconst NUMBER_OWNED    = (name) => /^INTERVIEW-\\d+$/.test(String(name || ''));\n\n// Snapshot the pool so the sweep can match numbers to stale assistants.\nconst items = $input.all();\nlet nums = (items.length === 1 && Array.isArray(items[0].json))\n  ? items[0].json\n  : items.map(i => i.json).filter(n => n && (n.id || n.number));\n\nconst pool = nums.filter(n => NUMBER_OWNED(n.name));\n\nreturn [{ json: {\n  bindings: pool.map(n => ({ id: n.id, name: n.name, assistantId: n.assistantId || null })),\n  poolSize: pool.length,\n  boundCount: pool.filter(n => !!n.assistantId).length,\n  freeCount: pool.filter(n => !n.assistantId).length\n}}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        208
+      ],
+      "id": "collect-pool-bindings",
+      "name": "Collect Pool Bindings"
+    },
+    {
+      "parameters": {
+        "url": "https://api.vapi.ai/assistant",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -64,
+        208
+      ],
+      "id": "vapi-get-assistants-sweep-",
+      "name": "Vapi - GET Assistants (sweep)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// SAFETY: this project owns only assistants named `INT ...` and phone numbers\n// named `INTERVIEW-nn`. The same Vapi account may also run production phone\n// lines and alerting systems. Every filter below is a hard gate, not a heuristic.\n// See PLAYBOOK.md section 7 (pool ownership rule).\nconst ASSISTANT_OWNED = (name) => /^INT /.test(String(name || ''));\nconst NUMBER_OWNED    = (name) => /^INTERVIEW-\\d+$/.test(String(name || ''));\n\n// Sweep sessions that were provisioned but never cleaned up.\n//\n// Chain 1 releases a session the moment its call ends. This catches the case the\n// brief calls out: a session provisioned for someone who never dialled. Without\n// it the pool drains permanently and silently (P3).\nconst STALE_AFTER_MINUTES = 120;   // an interview is capped at 25 min, so 2h is generous\n\nconst bindings = $('Collect Pool Bindings').first().json.bindings || [];\nconst byAssistant = {};\nfor (const b of bindings) {\n  if (b.assistantId) byAssistant[b.assistantId] = b;\n}\n\nconst items = $input.all();\nlet assistants = (items.length === 1 && Array.isArray(items[0].json))\n  ? items[0].json\n  : items.map(i => i.json).filter(a => a && a.id);\n\nconst now = Date.now();\nconst out = [];\n\nfor (const a of assistants) {\n  if (!ASSISTANT_OWNED(a.name)) continue;              // hard gate\n  const ageMin = (now - new Date(a.createdAt).getTime()) / 60000;\n  if (ageMin < STALE_AFTER_MINUTES) continue;\n  const b = byAssistant[a.id];\n  out.push({ json: {\n    assistantId: a.id,\n    assistantName: a.name,\n    ageMinutes: Math.round(ageMin),\n    phoneNumberId: b ? b.id : null,\n    phoneNumberName: b ? b.name : null,\n    hasNumber: !!b,\n    reason: 'stale-sweep'\n  }});\n}\n\n// Also unbind pool numbers pointing at an assistant that no longer exists.\nconst liveIds = new Set(assistants.map(a => a.id));\nfor (const b of bindings) {\n  if (b.assistantId && !liveIds.has(b.assistantId)) {\n    out.push({ json: {\n      assistantId: null,\n      assistantName: '(already deleted)',\n      ageMinutes: null,\n      phoneNumberId: b.id,\n      phoneNumberName: b.name,\n      hasNumber: true,\n      reason: 'orphaned-binding'\n    }});\n  }\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        160,
+        208
+      ],
+      "id": "find-stale-sessions",
+      "name": "Find Stale Sessions"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "stale-has-number",
+              "leftValue": "={{ $json.hasNumber }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        384,
+        208
+      ],
+      "id": "stale-has-number-",
+      "name": "Stale Has Number?"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.vapi.ai/phone-number/{{ $json.phoneNumberId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ assistantId: null }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        608,
+        144
+      ],
+      "id": "vapi-unbind-number-sweep-",
+      "name": "Vapi - Unbind Number (sweep)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://api.vapi.ai/assistant/{{ $json.assistantId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1008,
+        368
+      ],
+      "id": "vapi-delete-assistant-sweep-",
+      "name": "Vapi - Delete Assistant (sweep)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Rebuild the deletion list after the unbind.\n// $json here is the Vapi phone-number object returned by PATCH, so the original\n// stale-session fields are gone. Map back by phone number id -- deterministic,\n// with no reliance on pairedItem surviving an HTTP node.\nconst stale = $('Find Stale Sessions').all().map(i => i.json);\nconst out = [];\n\nfor (const item of $input.all()) {\n  const numberId = item.json && item.json.id;\n  const match = stale.find(s => s.phoneNumberId === numberId);\n  if (!match) continue;\n  if (!match.assistantId) continue;   // orphaned binding: number freed, assistant already gone\n  out.push({ json: match });\n}\n\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        144
+      ],
+      "id": "resolve-stale-deletions",
+      "name": "Resolve Stale Deletions"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "-- Free the pool row for a session whose call has ended.\nUPDATE interview_number_pool\nSET session_id = NULL, assistant_id = NULL, released_at = NOW(), updated_at = NOW()\nWHERE assistant_id = '{{ $('Find Bound Number').first().json.assistantId }}'\n   OR phone_number_id = '{{ $('Find Bound Number').first().json.phoneNumberId }}';\n\nUPDATE interview_sessions\nSET status = 'completed', call_ended_at = NOW(), released_at = NOW(),\n    ended_reason = $$ {{ $('Capture Raw Payload').first().json.probe.endedReason }} $$\nWHERE assistant_id = '{{ $('Find Bound Number').first().json.assistantId }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1280,
+        -224
+      ],
+      "id": "release-pool-row-release-",
+      "name": "Release Pool Row (release)",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "Postgres - Interview Practice"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "https://api.vapi.ai/phone-number",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "limit",
+              "value": "100"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -496,
+        464
+      ],
+      "id": "vapi-get-numbers-reconcile-",
+      "name": "Vapi - GET Numbers (reconcile)",
+      "credentials": {
+        "httpBearerAuth": {
+          "name": "Vapi API (Interview Practice)"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Emit one SQL statement that syncs the allocator to what Vapi actually holds.\n// Vapi is authoritative for bindings; this table is authoritative for allocation.\n// After a sweep the two can disagree, so free every row whose number is unbound.\n//\n// Runs on every schedule tick as its own branch -- NOT downstream of the teardown --\n// because when nothing is stale the teardown chain emits no items and anything\n// hanging off it never executes.\nconst items = $input.all();\nlet nums = (items.length === 1 && Array.isArray(items[0].json))\n  ? items[0].json\n  : items.map(i => i.json).filter(n => n && (n.id || n.number));\n\nconst pool = nums.filter(n => /^INTERVIEW-\\d+$/.test(String(n.name || '')));\nconst free = pool.filter(n => !n.assistantId).map(n => n.id);\n\nconst esc = (s) => \"'\" + String(s).replace(/'/g, \"''\") + \"'\";\n\nif (free.length === 0) {\n  return [{ json: { sql: 'SELECT 0 AS released;', freeCount: 0, poolSize: pool.length } }];\n}\n\nconst inList = free.map(esc).join(', ');\n\n// `target` captures session_id BEFORE it is nulled. Postgres RETURNING yields the\n// NEW row, so RETURNING session_id after SET session_id = NULL returns NULL and the\n// join to interview_sessions silently matches nothing -- rows got freed but their\n// sessions were never marked swept.\nconst sql = [\n  'WITH target AS (',\n  '  SELECT phone_number_id, session_id',\n  '  FROM interview_number_pool',\n  '  WHERE phone_number_id IN (' + inList + ')',\n  '    AND session_id IS NOT NULL',\n  '),',\n  'freed AS (',\n  '  UPDATE interview_number_pool p',\n  '  SET session_id = NULL, assistant_id = NULL, released_at = NOW(), updated_at = NOW()',\n  '  FROM target t',\n  '  WHERE p.phone_number_id = t.phone_number_id',\n  '  RETURNING t.session_id AS sid',\n  ')',\n  'UPDATE interview_sessions s',\n  \"SET status = CASE WHEN s.status IN ('provisioning','ready','provisioned') THEN 'swept' ELSE s.status END,\",\n  '    released_at = COALESCE(s.released_at, NOW())',\n  'FROM freed f',\n  'WHERE s.session_id = f.sid;'\n].join('\\n');\n\nreturn [{ json: { sql, freeCount: free.length, poolSize: pool.length } }];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        464
+      ],
+      "id": "build-reconcile-sql",
+      "name": "Build Reconcile SQL"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.sql }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -64,
+        464
+      ],
+      "id": "reconcile-pool",
+      "name": "Reconcile Pool",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "Postgres - Interview Practice"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Pull everything the coach report needs out of the end-of-call payload.\n// Field paths are the ones observed on a real call (CLAUDE.md section 6), not assumed.\nconst raw = $input.first().json.raw || {};\nconst body = raw.body !== undefined ? raw.body : raw;\nconst msg = (body && body.message !== undefined) ? body.message : body;\n\nconst md =\n  (msg.assistant && msg.assistant.metadata) ||\n  (msg.call && msg.call.metadata) ||\n  msg.metadata ||\n  {};\n\nconst transcript = String(msg.transcript || (msg.artifact && msg.artifact.transcript) || '').trim();\nconst durationSeconds = Math.round(Number(msg.durationSeconds || (Number(msg.durationMs || 0) / 1000)) || 0);\n\nconst participantName = md.participantName || 'the participant';\nconst firstName = String(md.participantName || '').split(/\\s+/)[0] || 'Participant';\n\n// Structured turns for the email's transcript. Vapi's `messages[]` carries one\n// entry per turn with role `bot` | `user` | `system`, which is far more reliable\n// than re-parsing the flat transcript string. Fall back to parsing only if the\n// array is absent.\nlet turns = [];\nif (Array.isArray(msg.messages) && msg.messages.length) {\n  for (const m of msg.messages) {\n    const role = String(m.role || '').toLowerCase();\n    if (role !== 'bot' && role !== 'user' && role !== 'assistant') continue;\n    const text = String(m.message || m.content || '').trim();\n    if (!text) continue;\n    turns.push({ speaker: role === 'user' ? 'user' : 'ai', text });\n  }\n}\nif (!turns.length && transcript) {\n  // \"AI: ...\\nUser: ...\" -- split on speaker labels at line starts.\n  const parts = transcript.split(/\\n(?=(?:AI|User|Assistant|Bot):\\s)/i);\n  for (const p of parts) {\n    const mm = p.match(/^(AI|User|Assistant|Bot):\\s*([\\s\\S]*)$/i);\n    if (!mm) continue;\n    const who = mm[1].toLowerCase();\n    turns.push({ speaker: who === 'user' ? 'user' : 'ai', text: mm[2].trim() });\n  }\n}\n\n// A call that barely happened should not produce a confident report.\nconst TOO_SHORT_SECONDS = 60;\nconst tooShort = durationSeconds < TOO_SHORT_SECONDS || transcript.length < 300;\n\nconst costTotal = (msg.costBreakdown && msg.costBreakdown.total) || msg.cost || null;\n\nreturn [{\n  json: {\n    sessionId: md.sessionId || null,\n    participantName,\n    firstName,\n    coachEmail: md.coachEmail || null,\n    jobTitle: md.jobTitle || 'the role',\n    jobLink: md.jobLink || null,\n    nervousAbout: md.nervousAbout || null,\n    focusArea: md.focusArea || null,\n    assistantId: (msg.assistant && msg.assistant.id) || (msg.call && msg.call.assistantId) || null,\n    callId: (msg.call && msg.call.id) || null,\n    endedReason: msg.endedReason || null,\n    durationSeconds,\n    durationLabel: durationSeconds >= 60\n      ? Math.floor(durationSeconds / 60) + 'm ' + (durationSeconds % 60) + 's'\n      : durationSeconds + 's',\n    transcript,\n    transcriptChars: transcript.length,\n    turns,\n    turnCount: turns.length,\n    vapiSummary: String(msg.summary || (msg.analysis && msg.analysis.summary) || '').trim() || null,\n    recordingUrl: msg.recordingUrl || (msg.artifact && msg.artifact.recordingUrl) || null,\n    costTotal,\n    tooShort,\n    // No coach selected means there is nowhere to send. Surfaced rather than thrown\n    // so teardown still runs and the failure is visible in the execution.\n    sendable: !!(md.coachEmail && transcript.length > 0)\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        -624
+      ],
+      "id": "prepare-report-inputs",
+      "name": "Prepare Report Inputs"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "sendable",
+              "leftValue": "={{ $json.sendable }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -96,
+        -656
+      ],
+      "id": "report-sendable-",
+      "name": "Report Sendable?"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Applicant: {{ $json.participantName }}\nRole practiced for: {{ $json.jobTitle }}\nCall length: {{ $json.durationLabel }} ({{ $json.durationSeconds }}s), ended: {{ $json.endedReason }}\n\nThey said they were most nervous about: {{ $json.nervousAbout }}\nThey said they wanted to practice: {{ $json.focusArea }}\n\nTranscript:\n\n{{ $json.transcript }}",
+        "options": {
+          "systemMessage": "=You read the transcript of an AI mock interview and prepare what a job coach receives.\n\nThe assistant in this transcript played a hiring manager, then switched at the end into a coach voice\nand delivered spoken feedback to the applicant. Your job is to find that feedback, capture the\nassessment it contains, and add short notes written for the human coach.\n\nReturn ONLY a JSON object. No prose, no code fence, no explanation.\n\n{\n  \"interviewReached\": true or false,\n  \"spokenFeedback\": \"the feedback monologue the applicant actually heard, verbatim, or null if the call ended before it was delivered\",\n  \"score\": \"exactly as stated in the feedback, e.g. \\\"8 of 12\\\", or null if not stated\",\n  \"band\": \"the band name as stated, or null\",\n  \"moments\": [ { \"name\": \"short label\", \"rating\": \"Strong\" | \"Partial\" | \"Weak\", \"evidence\": \"a direct quote of what the applicant said\" } ],\n  \"nudgesNeeded\": [ \"short description of each thing the applicant only covered after the interviewer followed up\" ],\n  \"nervousAboutOutcome\": \"2-3 sentences for the coach on how the thing they were nervous about actually went, or null\",\n  \"focusAreaOutcome\": \"2-3 sentences for the coach on how their chosen practice area went, or null\",\n  \"topStrength\": \"one specific thing they did well, quoting them\",\n  \"workOn\": \"one specific thing to work on together, concrete enough to rehearse\",\n  \"coachNote\": \"3-4 sentences: where this person is, and the single most useful thing to do next with them\"\n}\n\nRules that matter:\n\nQuote the applicant's actual words in every \"evidence\" field and in topStrength. If a field could be\npasted onto a different interview and still roughly work, it is not specific enough and it makes the\nreport worthless.\n\nNever invent. If the feedback monologue never happened because the call ended early, set\ninterviewReached false, spokenFeedback null, and return only the moments the conversation genuinely\nreached. Do not reconstruct feedback that was never spoken. Do not guess a score.\n\nDo not penalise nerves. Filler words, false starts, long pauses and circling before landing are not\nweaknesses; report substance only. These are people practicing because interviews frighten them.\n\nWrite nervousAboutOutcome and focusAreaOutcome for the coach, in the third person, describing\nbehaviour you observed. The most useful thing you can tell a coach is whether the thing the person\nfeared actually turned out to be a problem.\n\nBe warm but candid. A coach cannot help someone if the report is vague about what went wrong."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        144,
+        -704
+      ],
+      "id": "extract-feedback-coach-notes",
+      "name": "Extract Feedback & Coach Notes"
+    },
+    {
+      "parameters": {
+        "model": "gpt-5.4",
+        "options": {
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -496
+      ],
+      "id": "azure-gpt-5-4-report-",
+      "name": "Azure GPT-5.4 (report)",
+      "credentials": {
+        "azureOpenAiApi": {
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turn the extraction into the email a job coach actually receives.\n//\n// The coach is the customer for this report, not the participant. It has to be\n// useful to someone sitting down with them afterwards, which means evidence in\n// the participant's own words -- not a score in isolation.\nconst prep = $('Prepare Report Inputs').first().json;\nconst rawOut = String($input.first().json.output || '').trim();\n\n// The model was told to return JSON only; strip a code fence if it added one.\nfunction parseJson(text) {\n  let t = text.replace(/^```(?:json)?\\s*/i, '').replace(/```\\s*$/, '').trim();\n  try {\n    return JSON.parse(t);\n  } catch (e) {\n    const a = t.indexOf('{');\n    const b = t.lastIndexOf('}');\n    if (a >= 0 && b > a) {\n      try { return JSON.parse(t.slice(a, b + 1)); } catch (e2) { /* fall through */ }\n    }\n    return null;\n  }\n}\n\nconst x = parseJson(rawOut) || {};\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst para = (s) => esc(s).replace(/\\n{2,}/g, '</p><p>').replace(/\\n/g, '<br>');\n\nconst rows = [];\nconst moments = Array.isArray(x.moments) ? x.moments : [];\nfor (const m of moments) {\n  const rating = String(m.rating || '').toLowerCase();\n  const colour = rating === 'strong' ? '#1a7f37' : rating === 'partial' ? '#9a6700' : '#b3261e';\n  rows.push(\n    '<tr>' +\n    '<td style=\"padding:10px 12px;border-bottom:1px solid #eee;vertical-align:top;font-weight:600;\">' + esc(m.name) + '</td>' +\n    '<td style=\"padding:10px 12px;border-bottom:1px solid #eee;vertical-align:top;color:' + colour + ';font-weight:600;white-space:nowrap;\">' + esc(m.rating) + '</td>' +\n    '<td style=\"padding:10px 12px;border-bottom:1px solid #eee;vertical-align:top;\">' + para(m.evidence || '') + '</td>' +\n    '</tr>'\n  );\n}\n\nconst nudges = Array.isArray(x.nudgesNeeded) ? x.nudgesNeeded : [];\n\nfunction block(title, inner) {\n  if (!inner) return '';\n  return '<h3 style=\"margin:26px 0 8px;font-size:15px;color:#111;\">' + esc(title) + '</h3>' + inner;\n}\n\nconst incomplete = prep.tooShort || x.interviewReached === false;\n\n// ---- transcript: one turn per line, only the speaker label coloured.\n// AI turns are labelled \"AI:\", the participant's turns carry their first name.\n// max-height + overflow gives a scroll box in Gmail and Outlook on the web;\n// desktop Outlook ignores overflow and simply shows the whole thing, which is\n// an acceptable fallback.\nconst AI_COLOUR = '#2563eb';\nconst YOU_COLOUR = '#15803d';\nlet transcriptHtml = '';\nif (Array.isArray(prep.turns) && prep.turns.length) {\n  const lines = prep.turns.map((t) => {\n    const isUser = t.speaker === 'user';\n    const label = isUser ? esc(prep.firstName) : 'AI';\n    const colour = isUser ? YOU_COLOUR : AI_COLOUR;\n    return '<div style=\"margin:0 0 12px;line-height:1.55;\">' +\n           '<span style=\"font-weight:700;color:' + colour + ';\">' + label + ':</span> ' +\n           '<span style=\"color:#111;\">' + esc(t.text) + '</span></div>';\n  });\n  transcriptHtml =\n    '<div style=\"max-height:420px;overflow-y:auto;padding:14px 16px;background:#fafafa;' +\n    'border:1px solid #e5e7eb;border-radius:8px;font-size:13.5px;\">' +\n    lines.join('') + '</div>';\n} else if (prep.transcript) {\n  transcriptHtml =\n    '<div style=\"max-height:420px;overflow-y:auto;padding:14px 16px;background:#fafafa;' +\n    'border:1px solid #e5e7eb;border-radius:8px;white-space:pre-wrap;font-size:13.5px;color:#111;\">' +\n    esc(prep.transcript) + '</div>';\n}\n\nlet html = '';\nhtml += '<div style=\"font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.55;color:#222;max-width:720px;\">';\nhtml += '<p style=\"margin:0 0 4px;font-size:13px;color:#666;\">Interview practice report</p>';\nhtml += '<h2 style=\"margin:0 0 2px;font-size:20px;\">' + esc(prep.participantName) + '</h2>';\nhtml += '<p style=\"margin:0 0 18px;color:#666;\">Practiced for <strong>' + esc(prep.jobTitle) + '</strong> · ' +\n        esc(prep.durationLabel) + ' call' + (prep.endedReason ? ' · ended: ' + esc(prep.endedReason) : '') + '</p>';\n\nif (incomplete) {\n  html += '<div style=\"padding:12px 14px;background:#fff6e5;border:1px solid #f0d9a8;border-radius:8px;margin-bottom:18px;\">' +\n          '<strong>Short call.</strong> This interview ended early, so most of it never happened. ' +\n          'Everything below covers only what actually took place. It is not a fair picture of ' +\n          esc(prep.firstName) + '&rsquo;s interviewing overall.</div>';\n}\n\nhtml += block('The short version', x.coachNote ? '<p>' + para(x.coachNote) + '</p>' : '');\n\nif (x.score || x.band) {\n  html += '<p style=\"margin:18px 0;padding:12px 14px;background:#f4f6f8;border-radius:8px;\">' +\n          (x.score ? '<strong>Score:</strong> ' + esc(x.score) + '&nbsp;&nbsp;' : '') +\n          (x.band ? '<strong>Band:</strong> ' + esc(x.band) : '') + '</p>';\n}\n\n// The two things they walked in worried about -- usually the most useful lines here.\nif (prep.nervousAbout && x.nervousAboutOutcome) {\n  html += block('What they were most nervous about',\n    '<p style=\"margin:0 0 6px;color:#666;\"><em>&ldquo;' + esc(prep.nervousAbout) + '&rdquo;</em></p>' +\n    '<p style=\"margin:0;\">' + para(x.nervousAboutOutcome) + '</p>');\n}\nif (prep.focusArea && x.focusAreaOutcome) {\n  html += block('What they wanted to practice',\n    '<p style=\"margin:0 0 6px;color:#666;\"><em>&ldquo;' + esc(prep.focusArea) + '&rdquo;</em></p>' +\n    '<p style=\"margin:0;\">' + para(x.focusAreaOutcome) + '</p>');\n}\n\nif (rows.length) {\n  html += block('Moment by moment',\n    '<table style=\"border-collapse:collapse;width:100%;font-size:13px;\">' +\n    '<tr style=\"text-align:left;background:#f4f6f8;\">' +\n    '<th style=\"padding:8px 12px;\">Moment</th><th style=\"padding:8px 12px;\">Rating</th><th style=\"padding:8px 12px;\">What they said</th></tr>' +\n    rows.join('') + '</table>');\n}\n\nif (nudges.length) {\n  html += block('Needed a follow-up to get there',\n    '<p style=\"margin:0 0 6px;color:#666;\">They covered these, but only after the interviewer prompted them. ' +\n    'In a real interview nobody follows up &mdash; this is the most coachable thing in the report.</p>' +\n    '<ul style=\"margin:0;padding-left:20px;\">' + nudges.map((n) => '<li>' + esc(n) + '</li>').join('') + '</ul>');\n}\n\nif (x.topStrength) html += block('Biggest strength', '<p>' + para(x.topStrength) + '</p>');\nif (x.workOn) html += block('Worth working on together', '<p>' + para(x.workOn) + '</p>');\n\n// The participant heard this. The coach should see exactly the same words, so the\n// two of them are never working from different assessments.\nif (x.spokenFeedback) {\n  html += block('The feedback ' + prep.firstName + ' heard at the end of the call',\n    '<div style=\"padding:12px 14px;background:#f9f9fb;border-left:3px solid #cbd5e1;border-radius:4px;white-space:pre-wrap;\">' +\n    esc(x.spokenFeedback) + '</div>');\n}\n\nif (transcriptHtml) {\n  html += block('Full transcript', transcriptHtml);\n}\n\nhtml += '<p style=\"margin:24px 0 0;font-size:12px;color:#888;\">' +\n        'Generated automatically from an AI practice interview. Session ' + esc(prep.sessionId || 'unknown') +\n        '. The AI played a hiring manager for this role; it is practice, not an assessment of employability.</p>';\nhtml += '</div>';\n\nconst subject = 'Interview practice: ' + prep.participantName + ' — ' + prep.jobTitle +\n                (incomplete ? ' (short call)' : '');\n\nreturn [{\n  json: {\n    to: prep.coachEmail,\n    subject,\n    html,\n    parsedOk: Object.keys(x).length > 0,\n    momentCount: rows.length,\n    nudgeCount: nudges.length,\n    turnCount: Array.isArray(prep.turns) ? prep.turns.length : 0,\n    sessionId: prep.sessionId\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -528
+      ],
+      "id": "format-coach-email",
+      "name": "Format Coach Email"
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "bodyContent": "={{ $json.html }}",
+        "additionalFields": {
+          "bodyContentType": "HTML"
+        }
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        624,
+        -528
+      ],
+      "id": "outlook-send-coach-report",
+      "name": "Outlook - Send Coach Report",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "name": "Microsoft Outlook account"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE interview_sessions\nSET report_sent_at = NOW(),\n    status = CASE WHEN status IN ('provisioning','ready','provisioned') THEN 'reported' ELSE status END,\n    transcript = $$ {{ $('Prepare Report Inputs').first().json.transcript }} $$,\n    duration_seconds = {{ $('Prepare Report Inputs').first().json.durationSeconds }},\n    ended_reason = trim($$ {{ $('Prepare Report Inputs').first().json.endedReason }} $$)\nWHERE session_id = trim($$ {{ $('Prepare Report Inputs').first().json.sessionId }} $$);",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        848,
+        -528
+      ],
+      "id": "record-report-sent",
+      "name": "Record Report Sent",
+      "alwaysOutputData": true,
+      "credentials": {
+        "postgres": {
+          "name": "Postgres - Interview Practice"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Webhook - End Of Call Report": {
+      "main": [
+        [
+          {
+            "node": "Capture Raw Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture Raw Payload": {
+      "main": [
+        [
+          {
+            "node": "Extract Release Target",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Prepare Report Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Release Target": {
+      "main": [
+        [
+          {
+            "node": "Releasable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Releasable?": {
+      "main": [
+        [
+          {
+            "node": "Vapi - GET Numbers (release)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Vapi - GET Numbers (release)": {
+      "main": [
+        [
+          {
+            "node": "Find Bound Number",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Bound Number": {
+      "main": [
+        [
+          {
+            "node": "Has Bound Number?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Bound Number?": {
+      "main": [
+        [
+          {
+            "node": "Vapi - Unbind Number (release)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vapi - Delete Assistant (release)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vapi - Unbind Number (release)": {
+      "main": [
+        [
+          {
+            "node": "Vapi - Delete Assistant (release)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule - Sweep Orphans": {
+      "main": [
+        [
+          {
+            "node": "Vapi - GET Numbers (sweep)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Vapi - GET Numbers (reconcile)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vapi - GET Numbers (sweep)": {
+      "main": [
+        [
+          {
+            "node": "Collect Pool Bindings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Pool Bindings": {
+      "main": [
+        [
+          {
+            "node": "Vapi - GET Assistants (sweep)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vapi - GET Assistants (sweep)": {
+      "main": [
+        [
+          {
+            "node": "Find Stale Sessions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Stale Sessions": {
+      "main": [
+        [
+          {
+            "node": "Stale Has Number?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stale Has Number?": {
+      "main": [
+        [
+          {
+            "node": "Vapi - Unbind Number (sweep)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Vapi - Delete Assistant (sweep)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vapi - Unbind Number (sweep)": {
+      "main": [
+        [
+          {
+            "node": "Resolve Stale Deletions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Stale Deletions": {
+      "main": [
+        [
+          {
+            "node": "Vapi - Delete Assistant (sweep)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vapi - Delete Assistant (release)": {
+      "main": [
+        [
+          {
+            "node": "Release Pool Row (release)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vapi - GET Numbers (reconcile)": {
+      "main": [
+        [
+          {
+            "node": "Build Reconcile SQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Reconcile SQL": {
+      "main": [
+        [
+          {
+            "node": "Reconcile Pool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Report Inputs": {
+      "main": [
+        [
+          {
+            "node": "Report Sendable?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report Sendable?": {
+      "main": [
+        [
+          {
+            "node": "Extract Feedback & Coach Notes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Extract Feedback & Coach Notes": {
+      "main": [
+        [
+          {
+            "node": "Format Coach Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Coach Email": {
+      "main": [
+        [
+          {
+            "node": "Outlook - Send Coach Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Outlook - Send Coach Report": {
+      "main": [
+        [
+          {
+            "node": "Record Report Sent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure GPT-5.4 (report)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Extract Feedback & Coach Notes",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  }
+}

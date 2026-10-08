@@ -1,0 +1,1 @@
+={{ JSON.stringify({ sessionId: $json.session_id || null, status: $json.status || 'unknown', stage: $json.stage || null, phoneNumber: $json.phone_number || null, error: $json.error_message || null }) }}

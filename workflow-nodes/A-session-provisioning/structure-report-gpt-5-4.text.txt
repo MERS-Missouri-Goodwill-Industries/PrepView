@@ -1,0 +1,7 @@
+=The {{ $json.sourceLabel || 'job listing page text' }} follows. Build the Job Intelligence Report from it.
+
+URL: {{ $('Resolve Job Source').first().json.jobLink || 'none supplied' }}
+
+---
+
+{{ $json.pageText }}

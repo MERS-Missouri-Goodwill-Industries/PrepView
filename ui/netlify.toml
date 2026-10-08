@@ -1,0 +1,26 @@
+# Netlify deployment for the intake UI.
+# Hosting the form externally keeps the stage demo independent of the AI VM,
+# which needs a console login to restore services after a reboot.
+#
+# Set VITE_PROVISION_WEBHOOK_URL and VITE_COACHES in the Netlify site's
+# environment variables -- they are compiled into the bundle at build time.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# Single-page app: every path serves index.html so the client router handles it.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

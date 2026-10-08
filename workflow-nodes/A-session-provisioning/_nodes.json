@@ -1,0 +1,182 @@
+[
+  {
+    "name": "Architect - Generate Interviewer Prompt",
+    "type": "@n8n/n8n-nodes-langchain.agent",
+    "typeVersion": 1.6
+  },
+  {
+    "name": "Assess Fetched Page",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Azure GPT-5.4",
+    "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+    "typeVersion": 1
+  },
+  {
+    "name": "Azure GPT-5.4 (research)",
+    "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+    "typeVersion": 1
+  },
+  {
+    "name": "Build Assistant Body",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Cache Report",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Check Claim",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Check Report Cache",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Claim Number (atomic)",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Create Session Row",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Fetch Job Page",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Has Job URL?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Has Pasted Description?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Intake Valid?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Job Report Ready",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Mark Session Failed - Pool",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Number Available?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Page Usable?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Perplexity Research (fallback)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Read Session Status",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Record Session",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Report Cached?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Resolve Job Source",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Respond - Accepted",
+    "type": "n8n-nodes-base.respondToWebhook",
+    "typeVersion": 1.5
+  },
+  {
+    "name": "Respond - Bad Intake",
+    "type": "n8n-nodes-base.respondToWebhook",
+    "typeVersion": 1.5
+  },
+  {
+    "name": "Respond - Status",
+    "type": "n8n-nodes-base.respondToWebhook",
+    "typeVersion": 1.5
+  },
+  {
+    "name": "Stage - Researching",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Stage - Reserving Line",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Stage - Writing Interviewer",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Structure Report (GPT-5.4)",
+    "type": "@n8n/n8n-nodes-langchain.agent",
+    "typeVersion": 1.6
+  },
+  {
+    "name": "Use Pasted Description",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Validate Intake",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Vapi - PATCH Bind Number",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - POST Create Assistant",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Webhook - Provision Session",
+    "type": "n8n-nodes-base.webhook",
+    "typeVersion": 2.1
+  },
+  {
+    "name": "Webhook - Session Status",
+    "type": "n8n-nodes-base.webhook",
+    "typeVersion": 2.1
+  }
+]

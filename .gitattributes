@@ -1,0 +1,14 @@
+# Normalize line endings so the repo is consistent regardless of who clones it.
+# Without this, Windows contributors commit CRLF and the diffs become unreadable.
+* text=auto eol=lf
+
+# Windows batch files break if they are not CRLF.
+*.cmd  text eol=crlf
+*.bat  text eol=crlf
+
+# Never touch binaries.
+*.png  binary
+*.jpg  binary
+*.ico  binary
+*.woff binary
+*.woff2 binary

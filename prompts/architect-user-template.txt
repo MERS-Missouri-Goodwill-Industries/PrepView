@@ -1,0 +1,15 @@
+The applicant is {{ $('Validate Intake').first().json.participantName }}. They go by {{ $('Validate Intake').first().json.firstName }}.
+
+Here is the Job Intelligence Report for the role they are applying to:
+
+{{ $('Job Report Ready').first().json.jobReport }}
+
+Here is their answer to "What are you most nervous about?":
+
+{{ $('Validate Intake').first().json.nervousAbout }}
+
+Here is their answer to "What do you want to focus on practicing the most?":
+
+{{ $('Validate Intake').first().json.focusArea }}
+
+Build the complete voice-AI interviewer system prompt now. Output only the prompt.

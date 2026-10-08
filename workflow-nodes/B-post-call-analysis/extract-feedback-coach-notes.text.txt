@@ -1,0 +1,10 @@
+=Applicant: {{ $json.participantName }}
+Role practiced for: {{ $json.jobTitle }}
+Call length: {{ $json.durationLabel }} ({{ $json.durationSeconds }}s), ended: {{ $json.endedReason }}
+
+They said they were most nervous about: {{ $json.nervousAbout }}
+They said they wanted to practice: {{ $json.focusArea }}
+
+Transcript:
+
+{{ $json.transcript }}

@@ -1,0 +1,147 @@
+[
+  {
+    "name": "Azure GPT-5.4 (report)",
+    "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+    "typeVersion": 1
+  },
+  {
+    "name": "Build Reconcile SQL",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Capture Raw Payload",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Collect Pool Bindings",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Extract Feedback & Coach Notes",
+    "type": "@n8n/n8n-nodes-langchain.agent",
+    "typeVersion": 1.6
+  },
+  {
+    "name": "Extract Release Target",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Find Bound Number",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Find Stale Sessions",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Format Coach Email",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Has Bound Number?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Outlook - Send Coach Report",
+    "type": "n8n-nodes-base.microsoftOutlook",
+    "typeVersion": 2
+  },
+  {
+    "name": "Prepare Report Inputs",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Reconcile Pool",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Record Report Sent",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Releasable?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Release Pool Row (release)",
+    "type": "n8n-nodes-base.postgres",
+    "typeVersion": 2.6
+  },
+  {
+    "name": "Report Sendable?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Resolve Stale Deletions",
+    "type": "n8n-nodes-base.code",
+    "typeVersion": 2
+  },
+  {
+    "name": "Schedule - Sweep Orphans",
+    "type": "n8n-nodes-base.scheduleTrigger",
+    "typeVersion": 1.2
+  },
+  {
+    "name": "Stale Has Number?",
+    "type": "n8n-nodes-base.if",
+    "typeVersion": 2.2
+  },
+  {
+    "name": "Vapi - Delete Assistant (release)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - Delete Assistant (sweep)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - GET Assistants (sweep)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - GET Numbers (reconcile)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - GET Numbers (release)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - GET Numbers (sweep)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - Unbind Number (release)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Vapi - Unbind Number (sweep)",
+    "type": "n8n-nodes-base.httpRequest",
+    "typeVersion": 4.2
+  },
+  {
+    "name": "Webhook - End Of Call Report",
+    "type": "n8n-nodes-base.webhook",
+    "typeVersion": 2.1
+  }
+]
