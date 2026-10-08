@@ -148,7 +148,7 @@ html += '<p style="margin:24px 0 0;font-size:12px;color:#888;">' +
         '. The AI played a hiring manager for this role; it is practice, not an assessment of employability.</p>';
 html += '</div>';
 
-const subject = 'Interview practice: ' + prep.participantName + ' — ' + prep.jobTitle +
+const subject = 'Interview practice: ' + prep.participantName + ' | ' + prep.jobTitle +
                 (incomplete ? ' (short call)' : '');
 
 return [{

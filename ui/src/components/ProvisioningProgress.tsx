@@ -138,7 +138,7 @@ const ProvisioningProgress = ({ stage, name }: ProvisioningProgressProps) => {
       {/* Rotating fact */}
       <div className="max-w-lg mx-auto pt-2">
         <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground/70 mb-2">
-          While you wait — about Your Organization
+          While you wait, a bit about Your Organization
         </p>
         <div
           className={`bg-card border border-border rounded-2xl px-6 py-5 shadow-soft transition-opacity duration-300 ${

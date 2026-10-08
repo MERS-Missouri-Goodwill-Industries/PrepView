@@ -5,7 +5,7 @@
 > **Anmar Mahmod**
 > [linkedin.com/in/anmar-m-13b318250](https://www.linkedin.com/in/anmar-m-13b318250/)
 >
-> Feel free to reach out — whether you have questions about how any of this works, want a hand
+> Feel free to reach out, whether you have questions about how any of this works, want a hand
 > getting it set up in your own environment, or just want to connect. Happy to help.
 
 ---
@@ -14,7 +14,7 @@
 
 A job seeker fills in a short form about a job they're applying for. About two minutes later the
 screen shows a phone number. They call it and have an unscripted spoken interview with an AI playing
-the hiring manager **for that specific posting** — built from the real listing, not a generic
+the hiring manager **for that specific posting**, built from the real listing, not a generic
 template. At the end the AI steps out of character and talks them through how they did. Their job
 coach receives an email with the transcript, the feedback the participant heard, and notes to coach
 from.
@@ -40,11 +40,11 @@ Form  →  job posting researched  →  bespoke interviewer written  →  phone 
                         coach's inbox  ←  report  ←  spoken feedback  ←  the call
 ```
 
-- **Specific to the listing.** It reads the actual posting — the software named in it, the shift
-  pattern, the pay — and interviews against that. Can't read the page? Paste the description; that
+- **Specific to the listing.** It reads the actual posting (the software named in it, the shift
+  pattern, the pay) and interviews against that. Can't read the page? Paste the description; that
   path is more faithful anyway.
 - **Anxiety-lowering by design.** The form asks what the person is nervous about and what they want
-  to practice. Both become real interview beats, framed to reduce pressure — and the interviewer
+  to practice. Both become real interview beats, framed to reduce pressure, and the interviewer
   never reveals it was told.
 - **Nudges, not grades.** In character, capped at two per issue, pointing at a gap without
   explaining how to fill it. Nerves, filler and false starts never lower a score.
@@ -59,15 +59,15 @@ Form  →  job posting researched  →  bespoke interviewer written  →  phone 
 
 | | |
 |---|---|
-| **n8n** | Self-hosted, **publicly reachable over HTTPS** — the voice platform calls back into it |
+| **n8n** | Self-hosted, **publicly reachable over HTTPS**. The voice platform calls back into it |
 | **PostgreSQL 12+** | Phone-line allocator, session ledger, research cache |
 | **Vapi account** | Phone numbers and voice. One number per concurrent interview |
 | **An LLM** | Azure OpenAI in the reference build; any OpenAI-compatible provider works |
 | **An email sender** | Outlook OAuth2 in the reference build; SMTP or Gmail is a one-node swap |
 | **Node 20+, Python 3.9+** | To build the UI and run the tooling |
 
-Optional: a search API as a research fallback. You probably don't need it — see
-[PLAYBOOK.md §4](PLAYBOOK.md#4-build-history--what-was-done-and-why).
+Optional: a search API as a research fallback. You probably don't need it; see
+[PLAYBOOK.md §4](PLAYBOOK.md#4-build-history-what-was-done-and-why).
 
 ---
 
@@ -91,7 +91,7 @@ cd ui && cp .env.example .env.local && npm install && npm run build
 python ../tools/serve_ui.py --port 8090
 ```
 
-**Follow [docs/SETUP.md](docs/SETUP.md) properly** — each step has a validation check, and step 7 is
+**Follow [docs/SETUP.md](docs/SETUP.md) properly**. Each step has a validation check, and step 7 is
 the one everyone gets wrong.
 
 ---
@@ -100,11 +100,11 @@ the one everyone gets wrong.
 
 | Document | Read it when |
 |---|---|
-| **[PLAYBOOK.md](PLAYBOOK.md)** | **Start here.** Architecture, data flow, security, operations, known gaps. Written so someone with zero context can operate or rebuild this |
+| **[PLAYBOOK.md](PLAYBOOK.md)** | **Start here.** Architecture, data flow, security, operations, and the production checklist. Written so someone with zero context can operate or rebuild this |
 | [docs/SETUP.md](docs/SETUP.md) | Installing |
 | [CLAUDE.md](CLAUDE.md) | You're an AI agent working on this repo, or a developer about to change a workflow |
 | [db/schema.sql](db/schema.sql) | Understanding the data model |
-| [prompts/architect-system.md](prompts/architect-system.md) | Changing how the interviewer behaves — the highest-leverage file here |
+| [prompts/architect-system.md](prompts/architect-system.md) | Changing how the interviewer behaves. The highest-leverage file here |
 
 ---
 
@@ -124,35 +124,47 @@ tools/               link checker, invariant checker, static server
 
 ---
 
-## Before real participants use it
+## Before you go to production
 
-Several deliberate placeholders ship with this repo, and some decisions have no safe default. The
-full list is in [docs/SETUP.md](docs/SETUP.md#before-real-participants-use-this). The short version:
+The system works end to end as shipped, which is enough for a pilot or a demo. Before real
+participants use it, complete these steps as part of setting it up and making it yours. Each one is
+explained, with how to do it, in [PLAYBOOK.md §9](PLAYBOOK.md#9-before-you-go-to-production).
 
-- **Edit `ui/src/config/coaches.ts`.** Reports go wherever that list says.
-- **Replace `ui/src/config/facts.ts`.** Every fact must be sourced — never invent a statistic for a
-  participant-facing screen.
-- **Decide a retention policy.** Transcripts contain whatever someone discloses while nervous. The
-  engineering default is to keep everything forever, and that is the wrong answer.
-- **Have a job coach review the rubric draft.** It ships with six marked `[COACH DECISION]` points
-  precisely because it is not adopted.
-- **Rate-limit the public webhooks.** They are unauthenticated by default —
-  [PLAYBOOK.md §7.2](PLAYBOOK.md#72-attack-surface--be-honest-about-this).
+**Personalize it**
 
----
+- **Set your coach roster** in `ui/src/config/coaches.ts`. Reports go wherever that list says.
+- **Replace the waiting-screen facts** in `ui/src/config/facts.ts` with sourced facts about your
+  organization. Never invent a statistic for a participant-facing screen.
+- **Brand the intake form** with your own icons and colors.
+- **Send reports from a service mailbox**, not a personal one.
 
-## Known gaps
+**Decide with your program staff**
 
-Documented honestly rather than omitted, in
-[PLAYBOOK.md §9](PLAYBOOK.md#9-open-questions-and-gaps). The notable ones: the rubric is a draft, no
-interview length was ever decided, unhandled errors leave a session stuck at `provisioning`, there
-are no backups by default, and the webhooks are unauthenticated.
+- **Adopt a scoring rubric with a job coach.** The draft in `prompts/` marks the six decisions a coach
+  should make.
+- **Choose a target interview length** and number of questions.
+- **Set retention and consent policy** for transcripts and recordings. The engineering default is to
+  keep everything forever, and that is the wrong answer.
+
+**Harden it**
+
+- **Protect the public webhooks** with rate limiting, plus signature verification or an IP allowlist
+  on the report path.
+- **Add a workflow error handler** so a failure reaches the participant as a readable message.
+- **Set a secret rotation schedule.**
+
+**Operate it**
+
+- **Back up the database.** Transcripts are the record coaches work from.
+- **Tune execution logging** so status polls don't bury real runs.
+- **Confirm the schema** against `db/schema.sql` after your first run.
+- **Add an end-to-end test.**
 
 ---
 
 ## License
 
-[MIT](LICENSE). Use it, modify it, deploy it, build on it — just keep the copyright notice.
+[MIT](LICENSE). Use it, modify it, deploy it, build on it. Just keep the copyright notice.
 
 ---
 
@@ -162,6 +174,6 @@ Built for a nonprofit workforce-development program and generalized for reuse. A
 organization-specific configuration, branding, contact details and infrastructure identifiers have
 been removed; what remains is the system and the lessons learned building it.
 
-The measured facts quoted throughout the documentation — call durations, token counts, latency,
-cost per minute — come from real interviews on the reference deployment and are labelled where they
+The measured facts quoted throughout the documentation (call durations, token counts, latency,
+cost per minute) come from real interviews on the reference deployment and are labelled where they
 appear.

@@ -1,12 +1,13 @@
-# Interview Practice AI — Master System Playbook
+# Interview Practice AI: Master System Playbook
 
 **The single source of truth for this system.** Written for someone with zero prior context who is
 technically competent: a sysadmin, an IT team, or another AI agent. If you read one document before
 touching this system, read this one.
 
 **Status of this document.** Every claim is traceable to a file in this repository or to a measured
-observation from the reference deployment. Where something could not be verified, it is marked
-`UNDOCUMENTED` rather than guessed. Where a figure was measured, the measurement is given.
+observation from the reference deployment. Where a figure was measured, the measurement is given.
+Decisions each deployment makes for itself are flagged where they come up and collected as a
+checklist in [§9](#9-before-you-go-to-production).
 
 ---
 
@@ -15,12 +16,12 @@ observation from the reference deployment. Where something could not be verified
 1. [Executive overview](#1-executive-overview)
 2. [Architecture](#2-architecture)
 3. [Infrastructure and environment layout](#3-infrastructure-and-environment-layout)
-4. [Build history — what was done and why](#4-build-history--what-was-done-and-why)
+4. [Build history: what was done and why](#4-build-history-what-was-done-and-why)
 5. [Setup and replication guide](#5-setup-and-replication-guide)
 6. [Operations runbook](#6-operations-runbook)
 7. [Access, permissions and security](#7-access-permissions-and-security)
 8. [Glossary and reference](#8-glossary-and-reference)
-9. [Open questions and gaps](#9-open-questions-and-gaps)
+9. [Before you go to production](#9-before-you-go-to-production)
 
 ---
 
@@ -33,7 +34,7 @@ staff time, so most job seekers get one rehearsal or none at all. This system ma
 unlimited without adding a single hour to anyone's caseload. A participant fills in a short web form
 about a job they are applying for. About two minutes later the screen shows a phone number. They call
 it and have a real spoken conversation with an AI playing the hiring manager **for that specific
-job** — not a generic interview, but one built from the actual posting. At the end the AI steps out
+job**: not a generic interview, but one built from the actual posting. At the end the AI steps out
 of character and talks them through how they did. Their job coach then receives an email with the
 full transcript, the feedback the participant heard, and notes to coach from. The coach still
 coaches; the system produces the record they coach from.
@@ -44,8 +45,8 @@ Two n8n workflows wrap the Vapi voice platform, linked by metadata stamped on ea
 creation time. Workflow A takes a form submission, researches the job posting (direct page fetch
 structured by an LLM, with a search-API fallback), generates a bespoke ~40,000-character interviewer
 system prompt, atomically claims a phone line out of a Postgres pool, creates a Vapi assistant, binds
-the number to it, and answers. Because that takes 90–140 seconds — longer than a proxy will hold an
-HTTP request open — provisioning is **asynchronous**: the webhook returns `202` in ~0.3s and a React
+the number to it, and answers. Because that takes 90–140 seconds (longer than a proxy will hold an
+HTTP request open), provisioning is **asynchronous**: the webhook returns `202` in ~0.3s and a React
 single-page app polls a status endpoint every 3 seconds. Workflow B receives Vapi's
 `end-of-call-report` webhook and fans out two independent branches in parallel: one tears the session
 down (unbind number, delete assistant, free the pool row) and one extracts the spoken feedback from
@@ -59,7 +60,7 @@ boundary** (solved with Vapi `metadata`), **concurrency on a tiny phone-number p
 
 ### What it is not
 
-- Not a scoring engine with an adopted rubric. See §9 — the rubric in `prompts/` is a **draft for a
+- Not a scoring engine with an adopted rubric. See §9: the rubric in `prompts/` is a **draft for a
   human coach to correct**, not an adopted standard.
 - Not multi-tenant. One deployment serves one organization.
 - Not authenticated. Anyone who can reach the form can provision a session. See §7.
@@ -73,12 +74,12 @@ boundary** (solved with Vapi `metadata`), **concurrency on a tiny phone-number p
 | Component | What it does | Why it is there | Required? |
 |---|---|---|---|
 | **n8n** | Hosts both workflows; the entire orchestration layer | Everything except the UI is n8n nodes. No application server exists. | **Yes** |
-| **Postgres** | Phone-line allocator, session ledger, job-report cache | The allocator cannot be done anywhere else — see §2.4 | **Yes** |
+| **Postgres** | Phone-line allocator, session ledger, job-report cache | The allocator cannot be done anywhere else (see §2.4) | **Yes** |
 | **Vapi** | Telephony, speech-to-text, text-to-speech, call orchestration | Provides the phone numbers and runs the live conversation | **Yes** |
 | **LLM** (Azure OpenAI in the reference build) | Structures job postings, writes the interviewer prompt, extracts feedback | Three distinct jobs, same model | **Yes** |
 | **Deepgram** | Speech recognition during calls | Configured through Vapi, not called directly | Yes (via Vapi) |
-| **Intake UI** | React SPA — the participant-facing form | The only thing a participant touches | **Yes** |
-| **Email transport** (Microsoft Outlook OAuth2 in the reference build) | Delivers the coach report | Swap for SMTP/Gmail freely — one node | **Yes** |
+| **Intake UI** | React SPA: the participant-facing form | The only thing a participant touches | **Yes** |
+| **Email transport** (Microsoft Outlook OAuth2 in the reference build) | Delivers the coach report | Swap for SMTP/Gmail freely; it is one node | **Yes** |
 | **Perplexity** | Research fallback when a page cannot be fetched | Optional. Primary path is a plain fetch + LLM, which measured *better* | No |
 | **Reverse proxy / tunnel** | Public TLS endpoint for n8n | Vapi must reach the report webhook from the internet | **Yes** |
 
@@ -135,7 +136,7 @@ graph TB
 
 ### 2.3 End-to-end data flow
 
-**Provisioning — Workflow A.** Verified node order, exported from the running instance:
+**Provisioning (Workflow A).** Verified node order, exported from the running instance:
 
 ```mermaid
 sequenceDiagram
@@ -171,7 +172,7 @@ sequenceDiagram
     end
     A->>DB: Cache Report
     A->>DB: stage = writing_interviewer
-    A->>L: Architect (~40k chars out) — the slow step
+    A->>L: Architect, ~40k chars out (the slow step)
     A->>DB: stage = reserving_line
     A->>DB: Claim Number (FOR UPDATE SKIP LOCKED)
     alt pool exhausted
@@ -187,7 +188,7 @@ sequenceDiagram
     A-->>UI: {status, stage, phoneNumber, error}
 ```
 
-**Post-call — Workflow B.** The two branches fan out from one node **in parallel**, deliberately:
+**Post-call (Workflow B).** The two branches fan out from one node **in parallel**, deliberately:
 a slow LLM call must never delay returning a phone line to the pool.
 
 ```mermaid
@@ -230,7 +231,7 @@ routine.
 ```js
 voice: { provider: 'vapi', voiceId: 'Elliot', speed: 1.2, version: '2', language: 'auto' }
 ```
-`version: '2'` is the v2 voice model — opt-in per assistant, and more natural at lower cost. The
+`version: '2'` is the v2 voice model: opt-in per assistant, and more natural at lower cost. The
 string form (not the number `2`) is deliberate: that is what the API echoes back.
 
 **2. The applicant's first name is spoken exactly ONCE per call.** The platform speaks
@@ -293,7 +294,7 @@ there means calls work perfectly and **no report ever arrives, with no error any
 
 Any of these work: a reverse proxy with a public DNS name and TLS, a Cloudflare Tunnel, ngrok for
 testing. If your proxy has an origin-response timeout, note that provisioning already returns in
-0.3s, so only the report webhook matters — and it responds `onReceived`, immediately.
+0.3s, so only the report webhook matters, and it responds `onReceived`, immediately.
 
 ### 3.3 Scaling behaviour and limits
 
@@ -309,7 +310,7 @@ testing. If your proxy has an origin-response timeout, note that provisioning al
 
 ---
 
-## 4. Build history — what was done and why
+## 4. Build history: what was done and why
 
 Reconstructed from the reference deployment's build log. Included because it prevents
 re-litigating settled questions.
@@ -317,16 +318,16 @@ re-litigating settled questions.
 | Phase | What happened |
 |---|---|
 | **Recon** | An earlier prototype existed and was abandoned, not repaired. Its expressions were written against *assumed* node output shapes and every one was wrong. **The rule that came out of this: run the node, look at the real output, then write the expression.** |
-| **Phase 1 — provisioning** | Webhook → research → architect → create assistant → bind number → respond. Assistant config was harvested from a live, caller-facing agent rather than designed from scratch. |
-| **Phase 2 — reporting** | Deliberately built *after* capturing and inspecting a real `end-of-call-report` payload. The capture node interpreted nothing at first; it just logged the shape. |
-| **Phase 3 — survive an audience** | The atomic claim and the teardown/sweep. Verified with three simultaneous submissions. |
+| **Phase 1: provisioning** | Webhook → research → architect → create assistant → bind number → respond. Assistant config was harvested from a live, caller-facing agent rather than designed from scratch. |
+| **Phase 2: reporting** | Deliberately built *after* capturing and inspecting a real `end-of-call-report` payload. The capture node interpreted nothing at first; it just logged the shape. |
+| **Phase 3: survive an audience** | The atomic claim and the teardown/sweep. Verified with three simultaneous submissions. |
 | **Research step inverted** | The original design called for a search API to "research the job listing." Measured, it searched *around* the URL rather than reading it, and **missed the stated hourly wage**. A plain page fetch plus the LLM produced a 13,405-character report that captured the wage, the bonus, and the software named in the posting, with 16 "not stated" honesty markers against 1. The search API was demoted to a fallback. |
-| **Pasted description added** | Many postings cannot be fetched at all: career sites that block automation, logins, roles only ever emailed. A paste is now a first-class input, not a fallback. Verified against a wholly fictional listing with no URL — which proves the paste was the only source. |
+| **Pasted description added** | Many postings cannot be fetched at all: career sites that block automation, logins, roles only ever emailed. A paste is now a first-class input, not a fallback. Verified against a wholly fictional listing with no URL, which proves the paste was the only source. |
 | **Architect prompt rewritten** | From a cold interviewer to a mock interview *with training wheels*: in-character nudges capped at two per issue, a hard line between a nudge and coaching, support that rises when the applicant struggles, and a permanent role-flip to a coach voice at the end. Cost: the prompt grew from ~20k to ~40k characters and the cold path from 78s to 95s. |
 | **Provisioning made asynchronous** | Forced by a real failure: a submission provisioned successfully in 139.9s while the browser showed an error. |
 | **Durable UI hosting** | The dev server died three times across sessions. Replaced with a static server under a supervised service. |
 
-### Tried and abandoned — do not revisit without new information
+### Tried and abandoned (do not revisit without new information)
 
 - **Search-API-first research.** Measured worse than a page fetch. Kept only as a fallback.
 - **A structural "reference example" prompt** fed to the architect. It was a different *kind* of
@@ -375,7 +376,7 @@ webhook is unreachable and no report ever arrives.
 | Deployed drift | `python tools/deployed.py check` | All identical, all invariants OK |
 | UI | `python tools/serve_ui.py --check` | Exit 0 |
 
-> **Execution-log noise.** The UI polls every 3 seconds, and **each poll is a logged n8n execution** —
+> **Execution-log noise.** The UI polls every 3 seconds, and **each poll is a logged n8n execution**:
 > roughly 35 per session. Combined with a 15-minute sweep (96/day), real runs get buried and
 > retention shrinks to days. Before launch, either lengthen the poll interval or disable saving
 > successful executions for the status path.
@@ -384,11 +385,11 @@ webhook is unreachable and no report ever arrives.
 
 | Symptom | Likely cause | Fix |
 |---|---|---|
-| Form submits, then times out at 5 min | A node threw mid-run; row stuck at `provisioning` | Resubmit. The sweep frees the line. **Known gap — see §9** |
+| Form submits, then times out at 5 min | A node threw mid-run; row stuck at `provisioning` | Resubmit; the sweep frees the line. The error handler in §9 (item 9) surfaces the real error to the participant |
 | "All practice lines are busy" | Pool genuinely exhausted | Expected. Wait, or free a line (below) |
 | Call works, **no coach email** | `server.url` not publicly reachable, or email credential | Check §3.2 first. Verify the URL resolves from outside |
 | Interview is generic, not role-specific | Job page was unreadable; thin content got through | Run `python tools/check_job_url.py "<url>"`. Use the paste field |
-| Report says "short call" | Call under 60s | Correct behaviour — it refuses to invent an assessment |
+| Report says "short call" | Call under 60s | Correct behaviour: it refuses to invent an assessment |
 | Everything down after a reboot | Container runtime did not start | Restart the stack; most containers self-restart |
 
 ### 6.3 Free a stuck line
@@ -413,20 +414,20 @@ WHERE pool_name='INTERVIEW-0X';
 
 ### 6.4 Backup and recovery
 
-**UNDOCUMENTED — no backup process is defined.** The reference deployment had none. Before handling
-real participant data, decide and implement:
+**Set up backups before production.** No backup process ships with the system, because where and how
+often to back up depends on your environment. Before handling real participant data, put in place:
 
 - A Postgres dump schedule. `interview_sessions` holds transcripts; losing it loses the record coaches
   work from.
-- n8n workflow export to version control — `tools/deployed.py export` does exactly this.
-- RPO/RTO targets. Neither is defined anywhere.
+- n8n workflow export to version control. `tools/deployed.py export` does exactly this.
+- RPO/RTO targets that match how your program relies on the reports.
 
 Losing the database mid-event is survivable: re-apply `schema.sql`, re-seed the pool, carry on.
 Losing it after months of use loses every transcript.
 
 ### 6.5 After any workflow change
 
-1. `POST /workflows/{id}/deactivate` then `/activate`. **`PUT` alone does not re-register triggers** —
+1. `POST /workflows/{id}/deactivate` then `/activate`. **`PUT` alone does not re-register triggers**;
    a schedule trigger added that way silently never fires.
 2. Those two endpoints need `-H "Content-Length: 0"`.
 3. `python tools/deployed.py export` then `check`.
@@ -448,7 +449,7 @@ Losing it after months of use loses every transcript.
 | **Vapi** | Your report webhook | Public internet, **unauthenticated** | Can post any payload |
 | **Operator** | Everything | n8n UI, database, host | Full |
 
-### 7.2 Attack surface — be honest about this
+### 7.2 Attack surface: be honest about this
 
 | Endpoint | Exposure | Protection | Risk |
 |---|---|---|---|
@@ -465,15 +466,15 @@ report path; put the UI behind SSO or a shared link if participants are always c
 
 | Secret | Lives in | Rotation |
 |---|---|---|
-| Vapi private key | n8n credential store | **UNDOCUMENTED — no policy** |
-| LLM API key | n8n credential store | **UNDOCUMENTED** |
+| Vapi private key | n8n credential store | Set a schedule before production |
+| LLM API key | n8n credential store | Set a schedule before production |
 | Email OAuth token | n8n credential store | Provider-managed refresh |
-| Postgres password | n8n credential store | **UNDOCUMENTED** |
-| n8n API key | your `.env` | **UNDOCUMENTED** |
+| Postgres password | n8n credential store | Set a schedule before production |
+| n8n API key | your `.env` | Set a schedule before production |
 
 **Rules that are not optional:**
 - **No API key ever appears in a workflow body, expression, or header parameter.** Credential store
-  only. The abandoned prototype had a literal `Authorization: Bearer <token>` in a node — that is the
+  only. The abandoned prototype had a literal `Authorization: Bearer <token>` in a node. That is the
   anti-pattern this rule exists for.
 - The Vapi **private** key is required; the public key is browser-only and cannot read assistant
   configs.
@@ -483,22 +484,22 @@ report path; put the UI behind SSO or a shared link if participants are always c
 
 Each session stores the participant's name, the job they are applying for, two free-text answers
 about what they are anxious about, and **the full transcript of the interview**. People disclose real
-things to an interviewer when they are nervous — employment gaps, health, caregiving, convictions.
+things to an interviewer when they are nervous: employment gaps, health, caregiving, convictions.
 
-| Question | Status |
+| Decide before production | Where it starts |
 |---|---|
-| Call recordings — kept, where, how long? | **UNDOCUMENTED.** Vapi retains them; `recordingUrl` is in the payload. The reference build deliberately did not persist them pending a decision |
-| Transcript retention | **UNDOCUMENTED.** Stored indefinitely today |
-| Participant access to their own report | **UNDOCUMENTED.** They hear the feedback; only the coach receives the written report |
-| Consent | **UNDOCUMENTED.** No consent step exists in the form |
+| Call recordings: kept, where, how long? | Vapi retains them and `recordingUrl` arrives in the payload. This system does not store them; decide whether you want to, and for how long |
+| Transcript retention | Kept indefinitely by default. Choose a retention period and schedule the deletion |
+| Participant access to their own report | Participants hear the feedback on the call; only the coach receives the written report. Decide whether participants should get it too |
+| Consent | The form has no consent step. Add one if your context requires it |
 
-**These need an owner before real participants use the system.** They are policy questions, not
-engineering ones, and the engineering default — keep everything forever — is the wrong answer.
+**Assign an owner for these before real participants use the system.** They are policy decisions,
+not engineering ones, and the engineering default (keep everything forever) is the wrong answer.
 
 ### 7.5 Audit logging
 
-n8n execution history is the only audit trail, and it is pruned (see §6.1). **There is no
-application-level audit log.**
+n8n execution history is the audit trail, and it is pruned (see §6.1). If your compliance context
+requires an application-level audit log, add one before production.
 
 ---
 
@@ -506,7 +507,7 @@ application-level audit log.**
 
 | Term | Meaning |
 |---|---|
-| **Assistant** | A Vapi configuration — prompt, voice, model, transcriber. One is created per session and deleted after |
+| **Assistant** | A Vapi configuration: prompt, voice, model, transcriber. One is created per session and deleted after |
 | **Architect** | The LLM step that writes the interviewer system prompt from the job report plus the two form answers |
 | **Job Intelligence Report** | Structured summary of one posting; the architect's main input |
 | **Moment** | A scored beat in the interview. The generated prompt defines 4–6, rated Strong/Partial/Weak = 2/1/0 |
@@ -523,7 +524,7 @@ application-level audit log.**
 | `PLAYBOOK.md` | This file |
 | `CLAUDE.md` | Instructions for AI coding agents working on this repo |
 | `docs/SETUP.md` | Step-by-step install |
-| `db/schema.sql` | Database DDL — **reconstructed, see the header** |
+| `db/schema.sql` | Database DDL, **reconstructed (see the header)** |
 | `workflows/*.json` | The two n8n workflows, import-ready |
 | `workflow-nodes/` | Readable mirror of every code node, query and prompt |
 | `prompts/` | Architect, research, and the draft rubric |
@@ -532,34 +533,58 @@ application-level audit log.**
 
 ### External documentation
 
-- Vapi API — assistants, phone numbers, `server`/`serverMessages`, `metadata`
-- n8n — Code node, Postgres node, webhook response modes
+- Vapi API: assistants, phone numbers, `server`/`serverMessages`, `metadata`
+- n8n: Code node, Postgres node, webhook response modes
 - Your LLM provider's pricing and prompt-caching rules
 
 ---
 
-## 9. Open questions and gaps
+## 9. Before you go to production
 
-Carried forward honestly from the reference deployment. **None of these block a demo; several block
-real participant use.**
+The system runs end to end as shipped, which is enough for a pilot or a demo. Taking it to
+production means making it yours. **Complete the items below during setup and personalization,
+before real participants use it.** Most are a configuration change or a decision rather than new
+code, and several are deliberately left to you because the right answer depends on your program,
+your environment, and your policies.
 
-| # | Gap | Impact | What would close it |
+### 9.1 Personalize it
+
+| # | What to do | Why it matters | How |
 |---|---|---|---|
-| 1 | **The rubric is a draft.** `prompts/rubric-DRAFT-for-coach-review.md` has six marked `[COACH DECISION]` points and was never adopted | The report's credibility rests on scoring that matches how real coaches assess readiness | A job coach works through the draft |
-| 2 | **No interview length or question count was ever decided** | `maxDurationSeconds: 1800` is a cutoff, not a target. Real calls run 3–7 min. The architect prompt specifies neither | A product decision, then a line in the architect prompt |
-| 3 | **Unhandled node errors leave a session stuck at `provisioning`** | The UI reports a generic timeout after 5 min instead of the real error | A workflow-level error trigger setting `status='failed'` |
-| 4 | **No retention or consent policy** (see §7.4) | Legal and ethical exposure | A policy owner |
-| 5 | **No backups** (see §6.4) | Transcript loss is permanent | A dump schedule and an RPO |
-| 6 | **Webhooks are unauthenticated** (see §7.2) | Forged reports; resource exhaustion | Signature verification, IP allowlist, rate limiting |
-| 7 | **`db/schema.sql` is reconstructed, not dumped** | Column types may differ from the original | `pg_dump --schema-only` after your first run, then diff |
-| 8 | **Status polling floods execution history** | Real runs get buried; retention shrinks to days | Lengthen the interval or stop saving those executions |
-| 9 | **The architect is the latency bottleneck** | 95s cold path, missing a 60s target | Cap the worked examples it must write — trades interview quality for speed |
-| 10 | **Sending mailbox** | The reference build sent from a personal mailbox, which its own brief warned against | A service mailbox with OAuth consent |
-| 11 | **No automated tests** beyond `tools/deployed.py check` and a UI test stub | Regressions surface in production | An end-to-end harness |
+| 1 | **Set your coach roster** | Every report goes to whichever address is selected on the form | Edit `ui/src/config/coaches.ts` or set `VITE_COACHES`. The on-screen placeholder warning clears on its own once you do |
+| 2 | **Replace the waiting-screen facts** with sourced facts about your organization | Participants read these while they wait, and someone will eventually check one | Edit `ui/src/config/facts.ts`. Cite every figure; mark computed ones as computed |
+| 3 | **Brand the intake form** | It ships unbranded on purpose | Add your icons to `ui/public/`, uncomment the icon tags in `ui/index.html`, set `theme-color` |
+| 4 | **Send reports from a service mailbox** | Every coach report carries the sender's address | Create the email credential while signed in as a shared or service mailbox, not a personal one |
+
+### 9.2 Decide with your program staff
+
+| # | What to do | Why it matters | How |
+|---|---|---|---|
+| 5 | **Adopt a scoring rubric with a job coach** | The report is only as credible as the scoring behind it, and it should match how your coaches actually assess readiness | Work through the six `[COACH DECISION]` points in `prompts/rubric-DRAFT-for-coach-review.md` |
+| 6 | **Choose a target interview length and question count** | `maxDurationSeconds: 1800` is a safety cutoff, not a target. Real calls on the reference deployment ran 3–7 minutes | Decide what a session should be, then state it in `prompts/architect-system.md` |
+| 7 | **Set retention and consent policy** (§7.4) | Transcripts hold whatever people disclose while nervous | Decide how long transcripts and recordings are kept, whether participants receive their own report, and whether the form needs a consent step; then implement it |
+
+### 9.3 Harden it
+
+| # | What to do | Why it matters | How |
+|---|---|---|---|
+| 8 | **Protect the public webhooks** (§7.2) | They accept requests from anyone who can reach them | Rate-limit the provision webhook at your proxy; verify Vapi's webhook signature or allowlist its egress IPs on the report path |
+| 9 | **Add a workflow error handler** | Without one, a failed node leaves the session at `provisioning` and the participant sees a generic timeout after 5 minutes | Add a workflow-level error trigger that sets `status='failed'` with a readable `error_message` |
+| 10 | **Set a secret rotation schedule** (§7.3) | Keys otherwise live indefinitely | Rotate on a calendar, and immediately after any key is exposed |
+
+### 9.4 Operate it
+
+| # | What to do | Why it matters | How |
+|---|---|---|---|
+| 11 | **Back up the database** (§6.4) | Transcripts are the record coaches work from, and losing them is permanent | Schedule `pg_dump`, export workflows with `tools/deployed.py export`, and set RPO/RTO targets |
+| 12 | **Tune execution logging** | Each 3-second status poll is a logged n8n execution (about 35 per session), which buries real runs and shortens retention | Lengthen the poll interval, or stop saving successful executions for the status path |
+| 13 | **Confirm the schema after your first run** | `db/schema.sql` was rebuilt from the deployed queries rather than dumped from a live database | Run `pg_dump --schema-only` and diff it against `db/schema.sql` |
+| 14 | **Add an end-to-end test** | `tools/deployed.py check` and a UI test stub are what ship | Script the form → call → report run you perform by hand in SETUP step 10 |
+| 15 | **Decide whether to tune latency** | Provisioning takes 90–140 seconds, which the progress screen is built to cover | If you need it faster, cap the worked examples the architect writes. This trades interview quality for speed, so make it a deliberate choice |
 
 ---
 
-## Appendix — what was scanned to produce this document
+## Appendix: what was scanned to produce this document
 
 **Scanned:** both workflows exported live from the running n8n instance (36 and 29 nodes, full node
 and connection graphs); the 34-file readable mirror of every code node, SQL query and prompt; all
@@ -570,9 +595,9 @@ the reference deployment's own build log and recovery documentation.
 the longest call; transcript and job-report sizes; the full node topology and credential map; and a
 clean `npm install` → `tsc --noEmit` → `vite build` of the packaged UI.
 
-**Marked UNDOCUMENTED:** backup process, RPO/RTO, secret rotation policy, recording and transcript
-retention, participant consent, and participant access to their own report. Each is called out where
-it belongs rather than collected in a footnote.
+**Left for each deployment to decide:** backup process, RPO/RTO, secret rotation schedule, recording
+and transcript retention, participant consent, and participant access to their own report. Each is
+noted where it comes up and collected in §9 as part of moving to production.
 
 **Reconstructed rather than dumped:** `db/schema.sql`. The reference database was unreachable at
 packaging time (its container runtime's management API was returning errors), so the DDL was derived

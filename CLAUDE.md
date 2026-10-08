@@ -1,4 +1,4 @@
-# CLAUDE.md — Interview Practice AI
+# CLAUDE.md: Interview Practice AI
 
 Instructions for any AI coding agent working in this repository.
 
@@ -32,26 +32,26 @@ Two facts drive every design decision:
   parameter, not in a file. n8n's credential store only, referenced by name. If you find an inlined
   key, report it rather than use it.
 - **Never unbind a phone number whose name is not `INTERVIEW-NN`.** The same Vapi account may hold
-  production lines — alerting, support, anything. Every unbind path is gated on that name pattern.
+  production lines: alerting, support, anything. Every unbind path is gated on that name pattern.
   Keep it that way, in code and by hand.
 - **Only create or modify this project's own workflows.** If the n8n instance runs other automation,
   read it freely and change nothing. If copying a pattern requires *running* someone else's
   workflow, ask first.
 - **Reuse credentials by name; never duplicate them.** The names are listed in `.env.example`.
-- **Test with real but non-sensitive data** — a public job listing and your own contact details.
+- **Test with real but non-sensitive data**: a public job listing and your own contact details.
   **Never real participant information.**
 - **Verify platform API details against current documentation**, not against this file and not
   against training data. Field names change.
 
 ---
 
-## 3. Locked invariants — do not change these casually
+## 3. Locked invariants: do not change these casually
 
 Machine-checked by `python tools/deployed.py check`. Run it after any workflow edit and before any
 demo. It is proven to catch regressions, not just to pass.
 
 1. **Voice is pinned** to `{ provider: 'vapi', voiceId: 'Elliot', speed: 1.2, version: '2', language: 'auto' }`.
-   The string `'2'` is deliberate — it is what the API echoes back.
+   The string `'2'` is deliberate; it is what the API echoes back.
 2. **The applicant's first name is spoken exactly once per call.** The platform's `firstMessage`
    says it; nothing else may. Enforced in three independent places so one drifting generation cannot
    break it. The closing coach voice may use it once.
@@ -86,11 +86,11 @@ guessed output shape and every one was wrong. Specific traps that are still live
   silently never fires. Always `POST /workflows/{id}/deactivate` then `/activate` after a structural
   change.
 - Those two endpoints need **`-H "Content-Length: 0"`**. Some HTTP clients send the wrong
-  content-type and get "unsupported media type" — **and the deactivate half may already have
+  content-type and get "unsupported media type", **and the deactivate half may already have
   succeeded**, leaving the workflow off and its webhook 404ing. Use `curl` for these two.
 - `respondToWebhook` status code must be `options.responseCode`. Set it top-level and it **silently
   returns 200** with the right body, which looks like it works.
-- Assemble workflow JSON **in a script, never by hand** — node parameters carry 20k+ character
+- Assemble workflow JSON **in a script, never by hand**. Node parameters carry 20k+ character
   prompts full of quotes and newlines. `PUT` needs `{name, nodes, connections, settings}`; `active`
   is rejected there.
 - Inspect a run with `GET /executions/{id}?includeData=true` →
@@ -127,9 +127,9 @@ text has to reach the voice platform intact.
 |---|---|---|
 | `PLAYBOOK.md` | Authoritative system description | Keep current |
 | `docs/SETUP.md` | Install guide | Keep current |
-| `db/schema.sql` | DDL — **reconstructed**, see its header | Yes |
+| `db/schema.sql` | DDL, **reconstructed** (see its header) | Yes |
 | `workflows/*.json` | The two workflows, import-ready | Regenerate via `tools/deployed.py export` |
-| `workflow-nodes/` | Readable mirror of every code node, query, prompt | **Generated — do not hand-edit** |
+| `workflow-nodes/` | Readable mirror of every code node, query, prompt | **Generated; do not hand-edit** |
 | `prompts/architect-system.md` | Writes the interviewer prompt. **The highest-leverage file here** | Carefully |
 | `prompts/rubric-DRAFT-for-coach-review.md` | Straw-man with six `[COACH DECISION]` points | Only a coach adopts it |
 | `ui/src/config/coaches.ts` | **Report destinations.** Placeholder until edited | **Must edit before real use** |
@@ -187,5 +187,5 @@ Things already learned the hard way, which the prompt now encodes:
 - **Nerves, filler and false starts never lower a score.** An answer delivered imperfectly is still
   delivered.
 
-Changing the number of worked examples it must write is the main latency lever — and it trades
+Changing the number of worked examples it must write is the main latency lever, and it trades
 interview quality for speed. Make that trade deliberately, not accidentally.

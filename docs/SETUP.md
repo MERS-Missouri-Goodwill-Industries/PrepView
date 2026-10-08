@@ -3,7 +3,7 @@
 From nothing to a working mock-interview system. Allow **two to four hours** for a first install,
 most of which is waiting on account signups and OAuth consent screens.
 
-**Order matters.** Every step ends with a check. Do not continue past a failed check — later failures
+**Order matters.** Every step ends with a check. Do not continue past a failed check. Later failures
 are much harder to diagnose than the one in front of you.
 
 ---
@@ -21,16 +21,16 @@ are much harder to diagnose than the one in front of you.
 
 ### Software
 
-- **n8n** — self-hosted, **publicly reachable over HTTPS**. See step 2; this is the step people get wrong.
-- **PostgreSQL 12+** — reachable from the n8n container.
-- **Node.js 20+** and **npm** — to build the intake UI.
-- **Python 3.9+** — for the tools in `tools/`. Standard library only, nothing to install.
+- **n8n**: self-hosted, **publicly reachable over HTTPS**. See step 2; this is the step people get wrong.
+- **PostgreSQL 12+**: reachable from the n8n container.
+- **Node.js 20+** and **npm**: to build the intake UI.
+- **Python 3.9+**: for the tools in `tools/`. Standard library only, nothing to install.
 
 ### Understand this before you start
 
 **Vapi calls your webhook from their servers.** A `localhost` or LAN address for the report webhook
 means every call works perfectly and no report ever arrives, silently. If you have no public
-endpoint yet, solve that first — a reverse proxy with a real DNS name and TLS, a Cloudflare Tunnel,
+endpoint yet, solve that first: a reverse proxy with a real DNS name and TLS, a Cloudflare Tunnel,
 or ngrok for testing.
 
 ```bash
@@ -51,7 +51,7 @@ Read `db/schema.sql` before running it. It explains each table and **its header 
 DDL was reconstructed** from the queries the workflows execute rather than dumped from a live
 database. Every column is real; types are a best reconstruction.
 
-Leave the seed block at the bottom commented out — you will fill it in at step 5, once your phone
+Leave the seed block at the bottom commented out; you will fill it in at step 5, once your phone
 numbers exist.
 
 > **Check:** `\dt interview_*` lists `interview_job_reports`, `interview_number_pool`,
@@ -65,7 +65,7 @@ Stand up n8n however you prefer (Docker is typical), then put a public HTTPS end
 
 Record in `.env`: `N8N_BASE_URL`, `N8N_API_BASE_URL`, and an API key from **Settings → API**.
 
-> **Check — do this from outside your network**, on a phone with Wi-Fi off:
+> **Check (do this from outside your network)**, on a phone with Wi-Fi off:
 > ```bash
 > curl -I https://n8n.example.org/
 > ```
@@ -92,13 +92,13 @@ Notes that save time:
 - The Vapi **private** key, not the public one. The public key is browser-only and cannot read or
   write assistant configs.
 - Postgres host is what **the n8n container** sees. If Postgres is a sibling container, that is the
-  service name — `postgres`, not `localhost`.
+  service name (`postgres`, not `localhost`).
 - The Azure endpoint is `https://<resource>.openai.azure.com` with **no path appended**.
 - **The email credential needs an interactive browser login as the sending account.** It cannot be
-  created through the API. Use a **service mailbox**, not a personal one — every coach report will
+  created through the API. Use a **service mailbox**, not a personal one. Every coach report will
   carry that sender.
 
-> **Check:** each credential saves without error. The Postgres one has a working "Test" button —
+> **Check:** each credential saves without error. The Postgres one has a working "Test" button;
 > use it.
 
 ---
@@ -148,8 +148,8 @@ Take each number's `id` and `number` from that response and fill in the seed blo
 
 In n8n: **Workflows → Import from File**, once for each file in `workflows/`.
 
-- `A-session-provisioning.json` — 36 nodes
-- `B-post-call-analysis.json` — 29 nodes
+- `A-session-provisioning.json`: 36 nodes
+- `B-post-call-analysis.json`: 29 nodes
 
 Credential IDs were stripped on purpose so n8n matches by **name** against what you created in
 step 3. Open a couple of credential-bearing nodes and confirm they resolved.
@@ -160,7 +160,7 @@ Record both workflow IDs (visible in the editor URL) into `.env`.
 
 ---
 
-## 7. Set the report webhook URL — the step people miss
+## 7. Set the report webhook URL (the step people miss)
 
 Open **Workflow A → `Build Assistant Body`** and find:
 
@@ -175,14 +175,14 @@ Replace it with **your** public URL. This is stamped onto every assistant as the
 the end-of-call report to.
 
 > **Check:** the URL is `https://`, publicly resolvable, and matches Workflow B's
-> `interview-report` webhook path. Paste it into a browser from outside your network — a 404 from
+> `interview-report` webhook path. Paste it into a browser from outside your network. A 404 from
 > n8n is fine and proves reachability; a DNS failure or timeout is not.
 
 ---
 
 ## 8. Activate
 
-Activate both workflows. **After any later structural change, deactivate and reactivate** — a `PUT`
+Activate both workflows. **After any later structural change, deactivate and reactivate**. A `PUT`
 through the API does not re-register triggers, and a schedule trigger added that way silently never
 fires.
 
@@ -209,15 +209,15 @@ npm install
 npm run build
 ```
 
-**Before any real participant uses this**, edit two files — both ship as placeholders on purpose:
+**Before any real participant uses this**, edit two files. Both ship as placeholders on purpose:
 
-- **`src/config/coaches.ts`** — who receives the reports. Wrong address means a participant's
+- **`src/config/coaches.ts`**: who receives the reports. Wrong address means a participant's
   interview analysis goes to the wrong person. Either edit the file or set `VITE_COACHES` to keep
   real addresses out of version control. While placeholders are in use the UI says so on screen.
-- **`src/config/facts.ts`** — the waiting-screen facts. **Every one must be sourced.** Never invent a
+- **`src/config/facts.ts`**: the waiting-screen facts. **Every one must be sourced.** Never invent a
   statistic for a participant-facing screen; if a figure is computed rather than published, say so.
 
-Branding: `index.html` ships with the icon tags commented out and no logo files, deliberately — an
+Branding: `index.html` ships with the icon tags commented out and no logo files, deliberately: an
 unbranded tab beats someone else's logo. Add your icons to `ui/public/` and uncomment.
 
 Serve it with any web server, or use the bundled one:
@@ -236,7 +236,7 @@ python tools/serve_ui.py --check     # exits 0 if healthy
 
 ---
 
-## 10. One real end-to-end run — the only step that proves anything
+## 10. One real end-to-end run: the only step that proves anything
 
 Steps 1–9 can all pass while the report webhook is unreachable and no report ever arrives.
 
@@ -244,7 +244,7 @@ Steps 1–9 can all pass while the report webhook is unreachable and no report e
    ```bash
    python tools/check_job_url.py "https://example.com/careers/the-job"
    ```
-   `GOOD` means the system can read it. `FAIL` or `THIN` means use the paste field instead — that
+   `GOOD` means the system can read it. `FAIL` or `THIN` means use the paste field instead; that
    path is more faithful anyway, and immune to bot-blocking.
 2. Watch the progress bar. **Expect 90–140 seconds.** The architect step is the slow one.
 3. Call the number. Listen for: no dead air after you say you're ready; questions clearly about
@@ -277,7 +277,7 @@ Run it before any demo and after any workflow edit.
 |---|---|---|
 | Call works, **no coach email** | Report webhook not publicly reachable | Re-do step 7's check from outside your network |
 | "Credential not found" | Name mismatch with step 3 | Names must match exactly |
-| Provisioning hangs at 5 min | A node threw; session stuck at `provisioning` | n8n → Executions for the real error. Known gap — PLAYBOOK §9 item 3 |
+| Provisioning hangs at 5 min | A node threw; session stuck at `provisioning` | n8n → Executions for the real error. The error handler in PLAYBOOK §9 (item 9) surfaces it to the participant |
 | "All practice lines are busy" | Pool genuinely exhausted | Expected at capacity. Buy more numbers and add rows |
 | Interview is generic | Job page unreadable | `check_job_url.py`, then use the paste field |
 | Schedule trigger never fires | Workflow updated without reactivating | Deactivate, then activate |
@@ -285,15 +285,33 @@ Run it before any demo and after any workflow edit.
 
 ---
 
-## Before real participants use this
+## Before you go to production
 
-Not optional, and not engineering decisions — see [PLAYBOOK.md §7.4](../PLAYBOOK.md#74-participant-data) and §9:
+Complete these as part of setting the system up and making it yours. Each one is explained in
+[PLAYBOOK.md §9](../PLAYBOOK.md#9-before-you-go-to-production).
 
-- [ ] Real coach roster in place; placeholder warning gone
-- [ ] Facts replaced with **sourced** facts about your organization
-- [ ] A **retention policy** for transcripts and recordings
-- [ ] A **consent step**, if your context requires one — the form has none today
-- [ ] A **backup** of the database — none exists by default
-- [ ] A **job coach** has reviewed `prompts/rubric-DRAFT-for-coach-review.md`
-- [ ] Rate limiting on the public provision webhook
-- [ ] Reports sending from a **service mailbox**, not a personal one
+**Personalize it**
+
+- [ ] Coach roster set; the placeholder warning is gone
+- [ ] Waiting-screen facts replaced with **sourced** facts about your organization
+- [ ] Intake form branded with your icons and colors
+- [ ] Reports sending from a **service mailbox**
+
+**Decide with your program staff**
+
+- [ ] A job coach has worked through `prompts/rubric-DRAFT-for-coach-review.md`
+- [ ] Target interview length and question count chosen and written into the architect prompt
+- [ ] Retention and consent policy decided and implemented
+
+**Harden it**
+
+- [ ] Public webhooks rate-limited, and the report webhook verified or allowlisted
+- [ ] Workflow error handler in place
+- [ ] Secret rotation schedule set
+
+**Operate it**
+
+- [ ] Database backups scheduled
+- [ ] Execution logging tuned for the status poll
+- [ ] Schema confirmed with `pg_dump --schema-only` after the first run
+- [ ] End-to-end test scripted

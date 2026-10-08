@@ -101,12 +101,12 @@ const SuccessScreen = ({
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent rounded-full">
               <Clock className="w-3.5 h-3.5 text-accent-foreground" />
               <span className="text-sm font-medium text-accent-foreground">
-                Call within 2 hours — this number is released after your interview
+                Call within 2 hours. This number is released after your interview
               </span>
             </div>
 
             <p className="text-muted-foreground/70 text-sm">
-              Good luck — you've got this! 🎉
+              Good luck, you've got this! 🎉
             </p>
           </div>
         </div>

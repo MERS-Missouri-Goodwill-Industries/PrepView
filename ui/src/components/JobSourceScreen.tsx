@@ -108,7 +108,7 @@ const JobSourceScreen = ({
                          focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
                          transition-all duration-200 resize-y shadow-soft
                          placeholder:text-muted-foreground/50"
-              placeholder="Paste the whole job description here — duties, requirements, pay, anything the posting says."
+              placeholder="Paste the whole job description here: duties, requirements, pay, anything the posting says."
             />
             <div className="flex items-center justify-between gap-4 pl-1">
               <p className="text-sm text-muted-foreground/70">

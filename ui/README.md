@@ -1,7 +1,7 @@
 # Intake UI
 
 The participant-facing form for Interview Practice AI. A Vite + React 18 + TypeScript + Tailwind +
-shadcn/ui single-page app. Static once built — no server-side code, no runtime dependencies beyond a
+shadcn/ui single-page app. Static once built: no server-side code, no runtime dependencies beyond a
 web server that can serve files.
 
 See [../PLAYBOOK.md](../PLAYBOOK.md) for how this fits the wider system, and
@@ -42,22 +42,22 @@ requires `npm run build`, not just a restart.
 
 | Variable | Purpose |
 |---|---|
-| `VITE_PROVISION_WEBHOOK_URL` | POST target. Must be the production `/webhook/` path — `/webhook-test/` only answers while an n8n editor tab is open |
+| `VITE_PROVISION_WEBHOOK_URL` | POST target. Must be the production `/webhook/` path. `/webhook-test/` only answers while an n8n editor tab is open |
 | `VITE_STATUS_WEBHOOK_URL` | Polled every 3s during provisioning |
 | `VITE_COACHES` | JSON array of `{name, email, location?}`. Overrides `src/config/coaches.ts` |
 
 ### Two files you must edit before real use
 
-- **`src/config/coaches.ts`** — who receives each interview report. Ships as placeholders, and the UI
+- **`src/config/coaches.ts`**: who receives each interview report. Ships as placeholders, and the UI
   displays an on-screen warning while they are in use. A dropdown rather than a free-text email
   field is deliberate: no typos, and the list stays under your control.
-- **`src/config/facts.ts`** — the facts shown while the participant waits. **Every one must be
+- **`src/config/facts.ts`**: the facts shown while the participant waits. **Every one must be
   sourced.** Never invent a statistic for a participant-facing screen; if a figure is computed rather
   than published, say so in the source line.
 
 ### Branding
 
-`index.html` ships with the icon tags commented out and no logo files — an unbranded tab beats
+`index.html` ships with the icon tags commented out and no logo files. An unbranded tab beats
 shipping someone else's logo. Drop your icons into `public/`, uncomment the tags, and set
 `theme-color`.
 
@@ -77,7 +77,7 @@ not obvious and are load-bearing:
 
 - **Provisioning is asynchronous.** The POST returns `202` in about 0.3s with a `sessionId`; the
   phone number arrives by polling. Provisioning takes 90–140 seconds, which is longer than many
-  proxies will hold a request open — a synchronous design produced successful sessions that the
+  proxies will hold a request open; a synchronous design produced successful sessions that the
   browser displayed as errors.
 - **A failed individual poll is ignored**, not treated as the end of the wait. One transient blip
   must not kill a session that is provisioning fine.
@@ -88,7 +88,7 @@ from the server, not from a timer.
 
 ### Job input: URL *or* pasted description
 
-Validation is either/or — a valid URL, or a description of at least 120 characters. **A paste beats
+Validation is either/or: a valid URL, or a description of at least 120 characters. **A paste beats
 a link** and is offered as a first-class option rather than a fallback: many postings cannot be read
 from their URL at all (sites that block automation, postings behind a login, roles only ever emailed
 to the applicant). A paste also skips the fetch entirely.

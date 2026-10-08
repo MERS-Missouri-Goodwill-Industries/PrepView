@@ -88,7 +88,7 @@ const Index = () => {
         {/* Question 4: Nervous About */}
         <QuestionScreen
           question="What are you most nervous about?"
-          hint="Be honest—acknowledging your concerns is the first step to overcoming them"
+          hint="Be honest. Acknowledging your concerns is the first step to overcoming them"
           value={formData.nervousAbout}
           onChange={(value) => updateField("nervousAbout", value)}
           onNext={nextStep}

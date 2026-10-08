@@ -108,7 +108,7 @@ export const useIntakeForm = () => {
 
           if (!link && !desc) {
             newErrors.jobLink =
-              "Paste the job link, or paste the job description below — either one works";
+              "Paste the job link, or paste the job description below; either one works";
           } else if (desc && desc.length < MIN_DESCRIPTION_CHARS) {
             newErrors.jobDescription =
               "That's a bit short to build an interview from. Paste more of the posting, or use the link instead.";
@@ -125,7 +125,7 @@ export const useIntakeForm = () => {
         case 4:
           if (!formData.nervousAbout.trim()) {
             newErrors.nervousAbout =
-              "It's okay to share—understanding your concerns helps us support you better";
+              "It's okay to share. Understanding your concerns helps us support you better";
           } else if (formData.nervousAbout.trim().length < 10) {
             newErrors.nervousAbout = "Could you share a bit more about what's on your mind?";
           }
@@ -317,8 +317,8 @@ export const useIntakeForm = () => {
     }
 
     setSubmitError(
-      "This is taking longer than expected. Your interview may still be getting ready — " +
-        "please ask your job coach to check, or try again.",
+      "This is taking longer than expected. Your interview may still be getting ready. " +
+        "Please ask your job coach to check, or try again.",
     );
   }, [formData]);
 
