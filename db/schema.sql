@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS interview_sessions (
 
     -- From the intake form.
     participant_name TEXT,
-    coach_email      TEXT,
+    specialist_email      TEXT,
     job_title        TEXT,
     job_link         TEXT,
     nervous_about    TEXT,

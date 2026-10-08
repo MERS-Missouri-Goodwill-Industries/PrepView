@@ -16,7 +16,7 @@ are much harder to diagnose than the one in front of you.
 |---|---|---|
 | **Vapi** | Phone numbers, speech, call orchestration | Paid. You buy one number per concurrent interview |
 | **An LLM provider** | Research, prompt generation, feedback extraction | Reference build uses Azure OpenAI. Any OpenAI-compatible provider works with a node swap |
-| **An email sender** | Delivering coach reports | Reference build uses Microsoft Outlook OAuth2. SMTP or Gmail is a one-node change |
+| **An email sender** | Delivering employment specialist reports | Reference build uses Microsoft Outlook OAuth2. SMTP or Gmail is a one-node change |
 | **Perplexity** | *Optional* research fallback | Skip it. The primary path measured better |
 
 ### Software
@@ -95,7 +95,7 @@ Notes that save time:
   service name (`postgres`, not `localhost`).
 - The Azure endpoint is `https://<resource>.openai.azure.com` with **no path appended**.
 - **The email credential needs an interactive browser login as the sending account.** It cannot be
-  created through the API. Use a **service mailbox**, not a personal one. Every coach report will
+  created through the API. Use a **service mailbox**, not a personal one. Every employment specialist report will
   carry that sender.
 
 > **Check:** each credential saves without error. The Postgres one has a working "Test" button;
@@ -211,8 +211,8 @@ npm run build
 
 **Before any real participant uses this**, edit two files. Both ship as placeholders on purpose:
 
-- **`src/config/coaches.ts`**: who receives the reports. Wrong address means a participant's
-  interview analysis goes to the wrong person. Either edit the file or set `VITE_COACHES` to keep
+- **`src/config/specialists.ts`**: who receives the reports. Wrong address means a participant's
+  interview analysis goes to the wrong person. Either edit the file or set `VITE_SPECIALISTS` to keep
   real addresses out of version control. While placeholders are in use the UI says so on screen.
 - **`src/config/facts.ts`**: the waiting-screen facts. **Every one must be sourced.** Never invent a
   statistic for a participant-facing screen; if a figure is computed rather than published, say so.
@@ -250,7 +250,7 @@ Steps 1–9 can all pass while the report webhook is unreachable and no report e
 3. Call the number. Listen for: no dead air after you say you're ready; questions clearly about
    *that* posting; your stated focus area probed **without the interviewer revealing it was told**.
 4. Let it reach the spoken feedback. Hang up.
-5. Confirm the coach email arrives, with transcript and feedback.
+5. Confirm the employment specialist report arrives, with transcript and feedback.
 
 > **Check:** the line returns to the pool.
 > ```sql
@@ -275,7 +275,7 @@ Run it before any demo and after any workflow edit.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Call works, **no coach email** | Report webhook not publicly reachable | Re-do step 7's check from outside your network |
+| Call works, **no employment specialist report** | Report webhook not publicly reachable | Re-do step 7's check from outside your network |
 | "Credential not found" | Name mismatch with step 3 | Names must match exactly |
 | Provisioning hangs at 5 min | A node threw; session stuck at `provisioning` | n8n → Executions for the real error. The error handler in PLAYBOOK §9 (item 9) surfaces it to the participant |
 | "All practice lines are busy" | Pool genuinely exhausted | Expected at capacity. Buy more numbers and add rows |
@@ -292,14 +292,14 @@ Complete these as part of setting the system up and making it yours. Each one is
 
 **Personalize it**
 
-- [ ] Coach roster set; the placeholder warning is gone
+- [ ] Employment specialist roster set; the placeholder warning is gone
 - [ ] Waiting-screen facts replaced with **sourced** facts about your organization
 - [ ] Intake form branded with your icons and colors
 - [ ] Reports sending from a **service mailbox**
 
 **Decide with your program staff**
 
-- [ ] A job coach has worked through `prompts/rubric-DRAFT-for-coach-review.md`
+- [ ] An employment specialist has worked through `prompts/rubric-DRAFT-for-specialist-review.md`
 - [ ] Target interview length and question count chosen and written into the architect prompt
 - [ ] Retention and consent policy decided and implemented
 

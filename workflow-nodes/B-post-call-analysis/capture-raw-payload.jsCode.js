@@ -43,7 +43,7 @@ const probe = {
 probe.metadataFound = !!(probe.metadataFromAssistant || probe.metadataFromCall || probe.metadataTopLevel);
 const md = probe.metadataFromAssistant || probe.metadataFromCall || probe.metadataTopLevel || {};
 probe.sessionId    = md.sessionId    || null;
-probe.coachEmail   = md.coachEmail   || null;
+probe.specialistEmail   = md.specialistEmail   || null;
 probe.participantName = md.participantName || null;
 
 return [{ json: { receivedAt: new Date().toISOString(), probe, shape, raw } }];

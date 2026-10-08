@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
-import { COACHES } from "@/config/coaches";
+import { SPECIALISTS } from "@/config/specialists";
 
 interface FormData {
   name: string;
-  coachEmail: string;
+  specialistEmail: string;
   jobLink: string;
   jobDescription: string;
   nervousAbout: string;
@@ -12,7 +12,7 @@ interface FormData {
 
 interface FormErrors {
   name?: string;
-  coachEmail?: string;
+  specialistEmail?: string;
   jobLink?: string;
   jobDescription?: string;
   nervousAbout?: string;
@@ -63,14 +63,14 @@ const POLL_TIMEOUT_MS = 300_000;
 const MIN_DESCRIPTION_CHARS = 120;
 
 const GENERIC_FAILURE =
-  "We couldn't set up your interview just now. Please try again, or ask your job coach for help.";
+  "We couldn't set up your interview just now. Please try again, or ask your employment specialist for help.";
 
 export const useIntakeForm = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
     name: "",
-    // Pre-select when there is only one coach to choose from.
-    coachEmail: COACHES.length === 1 ? COACHES[0].email : "",
+    // Pre-select when there is only one employment specialist to choose from.
+    specialistEmail: SPECIALISTS.length === 1 ? SPECIALISTS[0].email : "",
     jobLink: "",
     jobDescription: "",
     nervousAbout: "",
@@ -98,8 +98,8 @@ export const useIntakeForm = () => {
           }
           break;
         case 2:
-          if (!formData.coachEmail.trim()) {
-            newErrors.coachEmail = "Please choose the job coach you're working with";
+          if (!formData.specialistEmail.trim()) {
+            newErrors.specialistEmail = "Please choose the employment specialist you're working with";
           }
           break;
         case 3: {
@@ -220,7 +220,7 @@ export const useIntakeForm = () => {
       // `participantName`. Sending both keeps either side safe to change.
       name: formData.name.trim(),
       participantName: formData.name.trim(),
-      coachEmail: formData.coachEmail.trim(),
+      specialistEmail: formData.specialistEmail.trim(),
       jobLink: formData.jobLink.trim(),
       // When present this takes priority over the link: it needs no fetch and is
       // the most faithful account of the role we can get.
@@ -318,7 +318,7 @@ export const useIntakeForm = () => {
 
     setSubmitError(
       "This is taking longer than expected. Your interview may still be getting ready. " +
-        "Please ask your job coach to check, or try again.",
+        "Please ask your employment specialist to check, or try again.",
     );
   }, [formData]);
 

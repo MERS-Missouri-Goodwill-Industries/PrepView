@@ -44,11 +44,11 @@ requires `npm run build`, not just a restart.
 |---|---|
 | `VITE_PROVISION_WEBHOOK_URL` | POST target. Must be the production `/webhook/` path. `/webhook-test/` only answers while an n8n editor tab is open |
 | `VITE_STATUS_WEBHOOK_URL` | Polled every 3s during provisioning |
-| `VITE_COACHES` | JSON array of `{name, email, location?}`. Overrides `src/config/coaches.ts` |
+| `VITE_SPECIALISTS` | JSON array of `{name, email, location?}`. Overrides `src/config/specialists.ts` |
 
 ### Two files you must edit before real use
 
-- **`src/config/coaches.ts`**: who receives each interview report. Ships as placeholders, and the UI
+- **`src/config/specialists.ts`**: who receives each interview report. Ships as placeholders, and the UI
   displays an on-screen warning while they are in use. A dropdown rather than a free-text email
   field is deliberate: no typos, and the list stays under your control.
 - **`src/config/facts.ts`**: the facts shown while the participant waits. **Every one must be
@@ -68,7 +68,7 @@ shipping someone else's logo. Drop your icons into `public/`, uncomment the tags
 Five one-question screens → review → provisioning progress → the phone number.
 
 ```
-name → coach → job (URL or pasted description) → nervous about → focus area
+name → employment specialist → job (URL or pasted description) → nervous about → focus area
     → review → POST (202) → poll every 3s → phone number
 ```
 

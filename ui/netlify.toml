@@ -2,7 +2,7 @@
 # Hosting the form externally keeps the stage demo independent of the AI VM,
 # which needs a console login to restore services after a reboot.
 #
-# Set VITE_PROVISION_WEBHOOK_URL and VITE_COACHES in the Netlify site's
+# Set VITE_PROVISION_WEBHOOK_URL and VITE_SPECIALISTS in the Netlify site's
 # environment variables -- they are compiled into the bundle at build time.
 
 [build]

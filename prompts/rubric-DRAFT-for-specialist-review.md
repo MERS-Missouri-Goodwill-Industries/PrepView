@@ -1,15 +1,15 @@
-# Mock Interview Scoring Rubric: DRAFT for coach review
+# Mock Interview Scoring Rubric: DRAFT for employment specialist review
 
-**Status: PROPOSAL. Nothing here is adopted.** This exists so a your organization job coach has something
+**Status: PROPOSAL. Nothing here is adopted.** This exists so an employment specialist at your organization has something
 concrete to argue with rather than a blank page. Every dimension, band, and threshold below is a
 starting guess by the build team and is expected to change.
 
-**Who needs to review this:** a job coach who actually runs mock interviews with participants.
+**Who needs to review this:** an employment specialist who actually runs mock interviews with participants.
 **What we need from them:** not approval, but corrections. Specifically the six decisions marked
-**[COACH DECISION]**.
+**[SPECIALIST DECISION]**.
 
 **Why this matters more than it looks.** The AI scores every practice interview against this rubric,
-and the coach receives the result as an emailed report. If the rubric does not match how coaches
+and the employment specialist receives the result as an emailed report. If the rubric does not match how employment specialists
 really assess readiness, the reports will be confidently wrong, and because they read as
 authoritative, they will be believed. The credibility of the whole tool rests here.
 
@@ -17,8 +17,8 @@ authoritative, they will be believed. The credibility of the whole tool rests he
 
 ## 1. What the report is for
 
-The **coach is the customer**, not the participant. The report's job is to give a coach who was not in
-the room enough specific, quoted evidence to sit down with the participant and coach from it.
+The **employment specialist is the customer**, not the participant. The report's job is to give an employment specialist who was not in
+the room enough specific, quoted evidence to sit down with the participant and work from it.
 
 Consequences for scoring design:
 
@@ -28,13 +28,13 @@ Consequences for scoring design:
   most common failure mode of an LLM asked to critique; it is a known, observed problem in
   a sibling voice-roleplay training tool.)
 - The report must speak directly to what the participant said they were **nervous about** and what
-  they wanted to **focus on practicing**. That is the part a coach will read first.
+  they wanted to **focus on practicing**. That is the part an employment specialist will read first.
 
 ---
 
 ## 2. Proposed dimensions
 
-Six dimensions, scored independently. **[COACH DECISION 1]**: are these the right six? Which are
+Six dimensions, scored independently. **[SPECIALIST DECISION 1]**: are these the right six? Which are
 missing, which don't matter, and which two matter most?
 
 | # | Dimension | What we propose it measures |
@@ -48,11 +48,11 @@ missing, which don't matter, and which two matter most?
 
 ### Scoring scale
 
-**[COACH DECISION 2]**: what scale do coaches actually think in? Options:
+**[SPECIALIST DECISION 2]**: what scale do employment specialists actually think in? Options:
 
 - **(a) 1–5 numeric** per dimension. Familiar, easy to trend across sessions, but invites false precision.
 - **(b) Three bands**: *Ready / Developing / Needs work.* Coarser, harder to argue with, closer to how
-  most coaches talk.
+  most employment specialists talk.
 - **(c) Band plus a one-line justification**, no number at all.
 
 Our recommendation is **(b) or (c)**. Numbers imply a measurement precision a 15-minute AI interview
@@ -61,7 +61,7 @@ does not have, and a participant who sees "2 out of 5" hears a verdict, not coac
 ### Not-observed is a real outcome
 
 If the interview never got to a dimension, the report must say **"not observed"** rather than scoring
-it low. A short call is not evidence of weakness. **[COACH DECISION 3]**: is there a minimum call
+it low. A short call is not evidence of weakness. **[SPECIALIST DECISION 3]**: is there a minimum call
 length below which a report shouldn't be issued at all?
 
 ---
@@ -72,7 +72,7 @@ Some things are not a low score on a dimension; they are the whole story, and av
 would be misleading. The proposal is that each **names itself explicitly in the report and caps the
 overall assessment**, no matter how well the rest went.
 
-**[COACH DECISION 4]**: is this the right list, and is capping the right response? Proposed flags:
+**[SPECIALIST DECISION 4]**: is this the right list, and is capping the right response? Proposed flags:
 
 | Flag | Trigger |
 |---|---|
@@ -93,11 +93,11 @@ Two deliberate design notes:
 
 ## 4. Proposed report structure
 
-What lands in the coach's inbox. **[COACH DECISION 5]**: is this the right shape and length for
+What lands in the employment specialist's inbox. **[SPECIALIST DECISION 5]**: is this the right shape and length for
 something you'd actually read between appointments?
 
 1. **Header**: participant name, role and employer practiced for, date, call length.
-2. **The one-paragraph version**, for when the coach reads nothing else. Where they are and the single most
+2. **The one-paragraph version**, for when the employment specialist reads nothing else. Where they are and the single most
    useful thing to work on next.
 3. **What they were worried about**: their stated `nervousAbout`, and whether it actually showed up as
    a weakness. Often the most valuable line in the report: *"She was worried about explaining her
@@ -110,8 +110,8 @@ something you'd actually read between appointments?
 7. **Two or three things to work on**, specific enough to rehearse.
 8. **Full transcript**, appended.
 
-**[COACH DECISION 6]**: should the participant ever see a version of this directly, or is it
-coach-only? This is a real decision with privacy and trust implications, and it changes the tone the
+**[SPECIALIST DECISION 6]**: should the participant ever see a version of this directly, or is it
+for the employment specialist only? This is a real decision with privacy and trust implications, and it changes the tone the
 report is written in.
 
 ---
@@ -119,20 +119,20 @@ report is written in.
 ## 5. Open questions beyond the rubric
 
 - **Repeat attempts.** Participants can practice unlimited times. Should the report compare against
-  their previous attempts? That is genuinely useful coaching data and needs the session history we
+  their previous attempts? That is genuinely useful data for the employment specialist and needs the session history we
   already store.
 - **Recordings.** Kept or not, and for how long? A participant privacy decision that needs an owner.
 - **Failure to answer at all.** If someone calls, panics, and says almost nothing, what should the
-  coach receive? A report would be cruel; silence loses the signal that they tried.
+  employment specialist receive? A report would be cruel; silence loses the signal that they tried.
 
 ---
 
 ## 6. What happens after review
 
-Once a coach has marked this up, the agreed rubric is wired into Workflow B as a scoring prompt that
+Once an employment specialist has marked this up, the agreed rubric is wired into Workflow B as a scoring prompt that
 emits structured JSON (one object per dimension with band, evidence quotes, and flags), and a
 separate formatting step turns that into the email. Scoring and wording stay separate so the rubric
 can be revised without touching the report layout.
 
-We will also keep a record of which rubric version produced which report, so a coach who disagrees
+We will also keep a record of which rubric version produced which report, so an employment specialist who disagrees
 with a score can be answered precisely rather than approximately.

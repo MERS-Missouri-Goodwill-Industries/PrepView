@@ -1,6 +1,6 @@
-// Turn the extraction into the email a job coach actually receives.
+// Turn the extraction into the email an employment specialist actually receives.
 //
-// The coach is the customer for this report, not the participant. It has to be
+// The employment specialist is the customer for this report, not the participant. It has to be
 // useful to someone sitting down with them afterwards, which means evidence in
 // the participant's own words -- not a score in isolation.
 const prep = $('Prepare Report Inputs').first().json;
@@ -93,7 +93,7 @@ if (incomplete) {
           esc(prep.firstName) + '&rsquo;s interviewing overall.</div>';
 }
 
-html += block('The short version', x.coachNote ? '<p>' + para(x.coachNote) + '</p>' : '');
+html += block('The short version', x.specialistNote ? '<p>' + para(x.specialistNote) + '</p>' : '');
 
 if (x.score || x.band) {
   html += '<p style="margin:18px 0;padding:12px 14px;background:#f4f6f8;border-radius:8px;">' +
@@ -124,14 +124,14 @@ if (rows.length) {
 if (nudges.length) {
   html += block('Needed a follow-up to get there',
     '<p style="margin:0 0 6px;color:#666;">They covered these, but only after the interviewer prompted them. ' +
-    'In a real interview nobody follows up &mdash; this is the most coachable thing in the report.</p>' +
+    'In a real interview nobody follows up, so this is the easiest thing in the report to improve.</p>' +
     '<ul style="margin:0;padding-left:20px;">' + nudges.map((n) => '<li>' + esc(n) + '</li>').join('') + '</ul>');
 }
 
 if (x.topStrength) html += block('Biggest strength', '<p>' + para(x.topStrength) + '</p>');
 if (x.workOn) html += block('Worth working on together', '<p>' + para(x.workOn) + '</p>');
 
-// The participant heard this. The coach should see exactly the same words, so the
+// The participant heard this. The employment specialist should see exactly the same words, so the
 // two of them are never working from different assessments.
 if (x.spokenFeedback) {
   html += block('The feedback ' + prep.firstName + ' heard at the end of the call',
@@ -153,7 +153,7 @@ const subject = 'Interview practice: ' + prep.participantName + ' | ' + prep.job
 
 return [{
   json: {
-    to: prep.coachEmail,
+    to: prep.specialistEmail,
     subject,
     html,
     parsedOk: Object.keys(x).length > 0,

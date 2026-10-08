@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { ArrowLeft, ArrowRight, Check, UserRound } from "lucide-react";
-import { COACHES, USING_PLACEHOLDER_COACHES } from "@/config/coaches";
+import { SPECIALISTS, USING_PLACEHOLDER_SPECIALISTS } from "@/config/specialists";
 
-interface CoachSelectScreenProps {
+interface SpecialistSelectScreenProps {
   question: string;
   hint?: string;
   value: string;
@@ -14,11 +14,11 @@ interface CoachSelectScreenProps {
 }
 
 /**
- * Coach picker. Deliberately a list of large tap targets rather than a dropdown:
+ * Employment specialist picker. Deliberately a list of large tap targets rather than a dropdown:
  * this form is often handed over on a tablet, and the report's destination is
  * the one field a typo would silently ruin.
  */
-const CoachSelectScreen = ({
+const SpecialistSelectScreen = ({
   question,
   hint,
   value,
@@ -27,12 +27,12 @@ const CoachSelectScreen = ({
   onBack,
   isVisible,
   error,
-}: CoachSelectScreenProps) => {
-  // A single-coach roster has nothing to choose; select it so the participant
+}: SpecialistSelectScreenProps) => {
+  // A single-specialist roster has nothing to choose; select it so the participant
   // never sees a pointless one-option question.
   useEffect(() => {
-    if (isVisible && !value && COACHES.length === 1) {
-      onChange(COACHES[0].email);
+    if (isVisible && !value && SPECIALISTS.length === 1) {
+      onChange(SPECIALISTS[0].email);
     }
   }, [isVisible, value, onChange]);
 
@@ -51,17 +51,17 @@ const CoachSelectScreen = ({
         <div
           className="space-y-3"
           role="radiogroup"
-          aria-label="Select your job coach"
+          aria-label="Select your employment specialist"
         >
-          {COACHES.map((coach) => {
-            const selected = value === coach.email;
+          {SPECIALISTS.map((specialist) => {
+            const selected = value === specialist.email;
             return (
               <button
-                key={coach.email}
+                key={specialist.email}
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                onClick={() => onChange(coach.email)}
+                onClick={() => onChange(specialist.email)}
                 onDoubleClick={onNext}
                 className={`w-full flex items-center gap-4 px-5 py-4 text-left rounded-2xl border
                             transition-all duration-200 shadow-soft
@@ -83,11 +83,11 @@ const CoachSelectScreen = ({
                 </span>
                 <span className="min-w-0">
                   <span className="block text-lg font-medium text-foreground truncate">
-                    {coach.name}
+                    {specialist.name}
                   </span>
                   <span className="block text-sm text-muted-foreground truncate">
-                    {coach.location ? `${coach.location} · ` : ""}
-                    {coach.email}
+                    {specialist.location ? `${specialist.location} · ` : ""}
+                    {specialist.email}
                   </span>
                 </span>
               </button>
@@ -98,9 +98,9 @@ const CoachSelectScreen = ({
             <p className="text-destructive text-sm font-medium animate-fade-in-up pl-1">{error}</p>
           )}
 
-          {USING_PLACEHOLDER_COACHES && (
+          {USING_PLACEHOLDER_SPECIALISTS && (
             <p className="text-sm text-muted-foreground/70 pl-1">
-              Using the built-in coach list. Set VITE_COACHES to the full roster.
+              Using the built-in employment specialist list. Set VITE_SPECIALISTS to the full roster.
             </p>
           )}
         </div>
@@ -134,4 +134,4 @@ const CoachSelectScreen = ({
   );
 };
 
-export default CoachSelectScreen;
+export default SpecialistSelectScreen;

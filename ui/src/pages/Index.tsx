@@ -1,6 +1,6 @@
 import FloatingOrbs from "@/components/FloatingOrbs";
 import ProgressIndicator from "@/components/ProgressIndicator";
-import CoachSelectScreen from "@/components/CoachSelectScreen";
+import SpecialistSelectScreen from "@/components/SpecialistSelectScreen";
 import JobSourceScreen from "@/components/JobSourceScreen";
 import QuestionScreen from "@/components/QuestionScreen";
 import ReviewScreen from "@/components/ReviewScreen";
@@ -59,16 +59,16 @@ const Index = () => {
           error={errors.name}
         />
 
-        {/* Question 2: Job Coach -- decides where the interview report is sent */}
-        <CoachSelectScreen
-          question="Which job coach are you working with?"
+        {/* Question 2: Employment Specialist -- decides where the interview report is sent */}
+        <SpecialistSelectScreen
+          question="Which employment specialist are you working with?"
           hint="We'll send them a summary of how your practice interview went"
-          value={formData.coachEmail}
-          onChange={(value) => updateField("coachEmail", value)}
+          value={formData.specialistEmail}
+          onChange={(value) => updateField("specialistEmail", value)}
           onNext={nextStep}
           onBack={prevStep}
           isVisible={currentStep === 2 && !isSuccess}
-          error={errors.coachEmail}
+          error={errors.specialistEmail}
         />
 
         {/* Question 3: Job source -- a link, or the description pasted directly */}

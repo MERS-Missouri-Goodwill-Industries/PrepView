@@ -15,9 +15,9 @@
 A job seeker fills in a short form about a job they're applying for. About two minutes later the
 screen shows a phone number. They call it and have an unscripted spoken interview with an AI playing
 the hiring manager **for that specific posting**, built from the real listing, not a generic
-template. At the end the AI steps out of character and talks them through how they did. Their job
-coach receives an email with the transcript, the feedback the participant heard, and notes to coach
-from.
+template. At the end the AI steps out of character and talks them through how they did. Their
+employment specialist receives an email with the transcript, the feedback the participant heard, and
+notes to work from.
 
 Self-hosted. Your infrastructure, your data, your phone numbers.
 
@@ -25,10 +25,10 @@ Self-hosted. Your infrastructure, your data, your phone numbers.
 
 ## Why it exists
 
-Mock interviews are among the highest-value and most staff-expensive things a job coach does, so most
+Mock interviews are among the highest-value and most staff-expensive things an employment specialist does, so most
 participants get one rehearsal or none. This makes practice unlimited without adding caseload hours.
 
-**The coach still coaches.** The system produces the record they coach *from*.
+**The employment specialist still leads.** The system produces the record they work *from*.
 
 ---
 
@@ -37,7 +37,7 @@ participants get one rehearsal or none. This makes practice unlimited without ad
 ```
 Form  →  job posting researched  →  bespoke interviewer written  →  phone number
                                                                         ↓
-                        coach's inbox  ←  report  ←  spoken feedback  ←  the call
+        employment specialist's inbox  ←  report  ←  spoken feedback  ←  the call
 ```
 
 - **Specific to the listing.** It reads the actual posting (the software named in it, the shift
@@ -48,7 +48,7 @@ Form  →  job posting researched  →  bespoke interviewer written  →  phone 
   never reveals it was told.
 - **Nudges, not grades.** In character, capped at two per issue, pointing at a gap without
   explaining how to fill it. Nerves, filler and false starts never lower a score.
-- **Feedback out loud, then in writing.** The participant hears it; the coach reads the same
+- **Feedback out loud, then in writing.** The participant hears it; the employment specialist reads the same
   assessment. They cannot diverge, because the report forwards what was said rather than re-scoring.
 - **Built for a live audience.** Simultaneous sign-ups get different phone lines, provably. Lines
   return to the pool automatically, and a sweep reclaims any that were never called.
@@ -132,7 +132,7 @@ explained, with how to do it, in [PLAYBOOK.md §9](PLAYBOOK.md#9-before-you-go-t
 
 **Personalize it**
 
-- **Set your coach roster** in `ui/src/config/coaches.ts`. Reports go wherever that list says.
+- **Set your employment specialist roster** in `ui/src/config/specialists.ts`. Reports go wherever that list says.
 - **Replace the waiting-screen facts** in `ui/src/config/facts.ts` with sourced facts about your
   organization. Never invent a statistic for a participant-facing screen.
 - **Brand the intake form** with your own icons and colors.
@@ -140,8 +140,8 @@ explained, with how to do it, in [PLAYBOOK.md §9](PLAYBOOK.md#9-before-you-go-t
 
 **Decide with your program staff**
 
-- **Adopt a scoring rubric with a job coach.** The draft in `prompts/` marks the six decisions a coach
-  should make.
+- **Adopt a scoring rubric with an employment specialist.** The draft in `prompts/` marks the six decisions an
+  employment specialist should make.
 - **Choose a target interview length** and number of questions.
 - **Set retention and consent policy** for transcripts and recordings. The engineering default is to
   keep everything forever, and that is the wrong answer.
@@ -155,7 +155,7 @@ explained, with how to do it, in [PLAYBOOK.md §9](PLAYBOOK.md#9-before-you-go-t
 
 **Operate it**
 
-- **Back up the database.** Transcripts are the record coaches work from.
+- **Back up the database.** Transcripts are the record employment specialists work from.
 - **Tune execution logging** so status polls don't bury real runs.
 - **Confirm the schema** against `db/schema.sql` after your first run.
 - **Add an end-to-end test.**

@@ -78,7 +78,7 @@ const assistantBody = {
   metadata: {
     sessionId: init.sessionId,
     participantName: init.participantName,
-    coachEmail: init.coachEmail,
+    specialistEmail: init.specialistEmail,
     jobTitle: init.jobTitle,
     jobLink: init.jobLink,
     nervousAbout: init.nervousAbout,

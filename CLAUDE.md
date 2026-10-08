@@ -13,13 +13,13 @@ already cost someone a day.
 An on-demand AI mock-interview system. A job seeker fills in a short web form about a job they are
 applying for; about two minutes later the screen shows a phone number; they call it and have an
 unscripted spoken interview with an AI playing the hiring manager **for that specific posting**; at
-the end the AI flips into a coach voice and talks them through how they did; their job coach receives
+the end the AI flips into a coach voice and talks them through how they did; their employment specialist receives
 an emailed report. Two n8n workflows, a Postgres database, the Vapi voice platform, an LLM, and a
 static React form. There is no application server.
 
 Two facts drive every design decision:
 
-- **The coach is the customer for the report.** A score on its own is not the deliverable. The report
+- **The employment specialist is the customer for the report.** A score on its own is not the deliverable. The report
   has to be useful to a human sitting down with the participant afterwards.
 - **The participant experience must be frictionless.** Form → phone number → call. No accounts, no
   app, no install.
@@ -131,8 +131,8 @@ text has to reach the voice platform intact.
 | `workflows/*.json` | The two workflows, import-ready | Regenerate via `tools/deployed.py export` |
 | `workflow-nodes/` | Readable mirror of every code node, query, prompt | **Generated; do not hand-edit** |
 | `prompts/architect-system.md` | Writes the interviewer prompt. **The highest-leverage file here** | Carefully |
-| `prompts/rubric-DRAFT-for-coach-review.md` | Straw-man with six `[COACH DECISION]` points | Only a coach adopts it |
-| `ui/src/config/coaches.ts` | **Report destinations.** Placeholder until edited | **Must edit before real use** |
+| `prompts/rubric-DRAFT-for-specialist-review.md` | Straw-man with six `[SPECIALIST DECISION]` points | Only an employment specialist adopts it |
+| `ui/src/config/specialists.ts` | **Report destinations.** Placeholder until edited | **Must edit before real use** |
 | `ui/src/config/facts.ts` | Waiting-screen facts. **Must be sourced, never invented** | **Must edit before real use** |
 | `tools/deployed.py` | Mirror + invariant checker | Rarely |
 | `tools/check_job_url.py` | Will the system be able to read this posting? | Rarely |
@@ -157,7 +157,7 @@ before any demo and after any workflow edit.**
   like success. When you report a number, say where it came from.
 - **Label estimates as estimates.** "This execution was pruned and cannot be measured" is a correct
   and useful answer. An invented figure is not.
-- **American spelling in participant- and coach-facing text** ("practiced", not "practised") unless
+- **American spelling in participant-facing and staff-facing text** ("practiced", not "practised") unless
   your deployment is somewhere that prefers otherwise.
 - **No markdown in anything the assistant speaks.** It will read the asterisks out loud.
 - When a change touches a locked invariant (§3) or a design decision in PLAYBOOK §2.4, say so

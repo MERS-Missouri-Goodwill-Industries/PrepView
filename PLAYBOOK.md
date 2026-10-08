@@ -29,15 +29,15 @@ checklist in [§9](#9-before-you-go-to-production).
 
 ### For a non-technical stakeholder
 
-Mock interviews are one of the most valuable things a job coach does and one of the most expensive in
+Mock interviews are one of the most valuable things an employment specialist does and one of the most expensive in
 staff time, so most job seekers get one rehearsal or none at all. This system makes that practice
 unlimited without adding a single hour to anyone's caseload. A participant fills in a short web form
 about a job they are applying for. About two minutes later the screen shows a phone number. They call
 it and have a real spoken conversation with an AI playing the hiring manager **for that specific
 job**: not a generic interview, but one built from the actual posting. At the end the AI steps out
-of character and talks them through how they did. Their job coach then receives an email with the
-full transcript, the feedback the participant heard, and notes to coach from. The coach still
-coaches; the system produces the record they coach from.
+of character and talks them through how they did. Their employment specialist then receives an email with the
+full transcript, the feedback the participant heard, and notes to work from. The employment
+specialist still leads; the system produces the record they work from.
 
 ### For an engineer seeing this for the first time
 
@@ -50,7 +50,7 @@ HTTP request open), provisioning is **asynchronous**: the webhook returns `202` 
 single-page app polls a status endpoint every 3 seconds. Workflow B receives Vapi's
 `end-of-call-report` webhook and fans out two independent branches in parallel: one tears the session
 down (unbind number, delete assistant, free the pool row) and one extracts the spoken feedback from
-the transcript and emails the coach. A 15-minute scheduled sweep reclaims lines provisioned for
+the transcript and emails the employment specialist. A 15-minute scheduled sweep reclaims lines provisioned for
 people who never called, and reconciles the database against Vapi.
 
 The three problems worth understanding before changing anything are **identity across the call
@@ -60,8 +60,8 @@ boundary** (solved with Vapi `metadata`), **concurrency on a tiny phone-number p
 
 ### What it is not
 
-- Not a scoring engine with an adopted rubric. See §9: the rubric in `prompts/` is a **draft for a
-  human coach to correct**, not an adopted standard.
+- Not a scoring engine with an adopted rubric. See §9: the rubric in `prompts/` is a **draft for an
+  employment specialist to correct**, not an adopted standard.
 - Not multi-tenant. One deployment serves one organization.
 - Not authenticated. Anyone who can reach the form can provision a session. See §7.
 
@@ -79,7 +79,7 @@ boundary** (solved with Vapi `metadata`), **concurrency on a tiny phone-number p
 | **LLM** (Azure OpenAI in the reference build) | Structures job postings, writes the interviewer prompt, extracts feedback | Three distinct jobs, same model | **Yes** |
 | **Deepgram** | Speech recognition during calls | Configured through Vapi, not called directly | Yes (via Vapi) |
 | **Intake UI** | React SPA: the participant-facing form | The only thing a participant touches | **Yes** |
-| **Email transport** (Microsoft Outlook OAuth2 in the reference build) | Delivers the coach report | Swap for SMTP/Gmail freely; it is one node | **Yes** |
+| **Email transport** (Microsoft Outlook OAuth2 in the reference build) | Delivers the employment specialist report | Swap for SMTP/Gmail freely; it is one node | **Yes** |
 | **Perplexity** | Research fallback when a page cannot be fetched | Optional. Primary path is a plain fetch + LLM, which measured *better* | No |
 | **Reverse proxy / tunnel** | Public TLS endpoint for n8n | Vapi must reach the report webhook from the internet | **Yes** |
 
@@ -87,7 +87,7 @@ boundary** (solved with Vapi `metadata`), **concurrency on a tiny phone-number p
 
 ```mermaid
 graph TB
-    P["Participant<br/>(with a job coach)"]
+    P["Participant<br/>(with an employment specialist)"]
     UI["Intake UI<br/>React SPA, static"]
     PROXY["Reverse proxy / tunnel<br/>public TLS"]
 
@@ -104,7 +104,7 @@ graph TB
     MAIL["Email transport"]
     WEB["The job posting<br/>on the open web"]
     PPLX["Perplexity<br/>(optional fallback)"]
-    COACH["Job coach<br/>mailbox"]
+    SPEC["Employment specialist<br/>mailbox"]
 
     P -->|"1 . fills the form"| UI
     UI -->|"2 . POST, gets 202"| PROXY
@@ -125,7 +125,7 @@ graph TB
     WB -->|"free the line"| PG
     WB -->|"extract feedback"| LLM
     WB -->|"6 . report"| MAIL
-    MAIL --> COACH
+    MAIL --> SPEC
     SWEEP -->|"reclaim orphans"| VAPI
     SWEEP --> PG
 
@@ -202,7 +202,7 @@ graph LR
     R4 --> R5{"Has number?"} -->|yes| R6["Unbind"] --> R7["Delete assistant"] --> R8[("Free pool row")]
 
     P1 --> P2{"Sendable?"}
-    P2 -->|yes| P3["Extract Feedback<br/>(LLM, strict JSON)"] --> P4["Format Coach Email"] --> P5["Send"] --> P6[("Record report sent")]
+    P2 -->|yes| P3["Extract Feedback<br/>(LLM, strict JSON)"] --> P4["Format Employment<br/>Specialist Email"] --> P5["Send"] --> P6[("Record report sent")]
 
     style R8 fill:#e6f4ea
     style P6 fill:#e6f4ea
@@ -218,7 +218,7 @@ graph LR
 | **Teardown and reporting run in parallel branches** | The LLM extraction takes seconds to tens of seconds. Phone lines are the scarce resource. | Lines stay held while an email is composed. |
 | **Pool ownership is enforced by NAME (`^INTERVIEW-\d+$`)** | The same Vapi account may hold production lines. Every unbind is gated on the name. | The sweep can unbind a production phone line. |
 | **Reconciliation hangs off its own branch of the trigger** | A node that emits zero items silences everything downstream of it. Reconciliation sat behind a filter and silently never ran on quiet ticks. | Drift between Vapi and the database goes uncorrected. |
-| **The report *forwards* the spoken feedback rather than re-scoring** | The assistant already delivers an assessment out loud. Re-scoring independently means the participant hears one thing and their coach reads another. | Participant and coach get divergent assessments. |
+| **The report *forwards* the spoken feedback rather than re-scoring** | The assistant already delivers an assessment out loud. Re-scoring independently means the participant hears one thing and their employment specialist reads another. | Participant and employment specialist get divergent assessments. |
 | **No tools on the assistant** | The interviewer needs none, and a tool is one more thing that can misfire mid-call. | Unpredictable call behaviour. |
 
 ### 2.5 Locked invariants
@@ -334,7 +334,7 @@ re-litigating settled questions.
   prompt (a receptionist with a knowledge base) and became actively misleading once the architect
   specified its own structure. Retained in `prompts/` but not wired in.
 - **Re-scoring the transcript independently of the spoken feedback.** Guarantees divergence between
-  what the participant hears and what the coach reads.
+  what the participant hears and what the employment specialist reads.
 - **Relying on a task scheduler's restart-on-failure for the UI service.** Tested: killing the child
   process did *not* trigger a restart. Fixed with a supervising loop plus a repeating trigger.
 
@@ -387,7 +387,7 @@ webhook is unreachable and no report ever arrives.
 |---|---|---|
 | Form submits, then times out at 5 min | A node threw mid-run; row stuck at `provisioning` | Resubmit; the sweep frees the line. The error handler in §9 (item 9) surfaces the real error to the participant |
 | "All practice lines are busy" | Pool genuinely exhausted | Expected. Wait, or free a line (below) |
-| Call works, **no coach email** | `server.url` not publicly reachable, or email credential | Check §3.2 first. Verify the URL resolves from outside |
+| Call works, **no employment specialist report** | `server.url` not publicly reachable, or email credential | Check §3.2 first. Verify the URL resolves from outside |
 | Interview is generic, not role-specific | Job page was unreadable; thin content got through | Run `python tools/check_job_url.py "<url>"`. Use the paste field |
 | Report says "short call" | Call under 60s | Correct behaviour: it refuses to invent an assessment |
 | Everything down after a reboot | Container runtime did not start | Restart the stack; most containers self-restart |
@@ -417,8 +417,8 @@ WHERE pool_name='INTERVIEW-0X';
 **Set up backups before production.** No backup process ships with the system, because where and how
 often to back up depends on your environment. Before handling real participant data, put in place:
 
-- A Postgres dump schedule. `interview_sessions` holds transcripts; losing it loses the record coaches
-  work from.
+- A Postgres dump schedule. `interview_sessions` holds transcripts; losing it loses the record
+  employment specialists work from.
 - n8n workflow export to version control. `tools/deployed.py export` does exactly this.
 - RPO/RTO targets that match how your program relies on the reports.
 
@@ -442,7 +442,7 @@ Losing it after months of use loses every transcript.
 |---|---|---|---|
 | **Participant** | The intake form | Public web, **no authentication** | Can create sessions |
 | **Participant** | The assigned phone number | PSTN | Can hold a call |
-| **Coach** | Their mailbox | Email | Receives reports |
+| **Employment specialist** | Their mailbox | Email | Receives reports |
 | **n8n** | Postgres | Credential store | Full read/write on the three tables |
 | **n8n** | Vapi | Private API key | Create/delete assistants, bind/unbind **any** number in the account |
 | **n8n** | LLM, email | Credential store | Inference; send-as |
@@ -455,12 +455,12 @@ Losing it after months of use loses every transcript.
 |---|---|---|---|
 | `POST /webhook/interview-provision` | Public, unauthenticated | Input validation only | **Anyone who finds it can burn phone lines, LLM spend, and pool capacity.** No rate limiting |
 | `GET /webhook/interview-status` | Public, unauthenticated | Needs a `sessionId` (UUID) | Session data leaks to anyone holding the UUID |
-| `POST /webhook/interview-report` | Public, unauthenticated | None | **A forged payload can trigger teardown and send a fabricated report to a coach** |
+| `POST /webhook/interview-report` | Public, unauthenticated | None | **A forged payload can trigger teardown and send a fabricated report to an employment specialist** |
 | The intake UI | Public static files | None | Low |
 
 **Hardening worth doing before any public deployment:** rate-limit the provision webhook at the
 proxy; verify Vapi's webhook signature if available, or at minimum allowlist their egress IPs on the
-report path; put the UI behind SSO or a shared link if participants are always coach-accompanied.
+report path; put the UI behind SSO or a shared link if participants are always accompanied by an employment specialist.
 
 ### 7.3 Secrets
 
@@ -490,7 +490,7 @@ things to an interviewer when they are nervous: employment gaps, health, caregiv
 |---|---|
 | Call recordings: kept, where, how long? | Vapi retains them and `recordingUrl` arrives in the payload. This system does not store them; decide whether you want to, and for how long |
 | Transcript retention | Kept indefinitely by default. Choose a retention period and schedule the deletion |
-| Participant access to their own report | Participants hear the feedback on the call; only the coach receives the written report. Decide whether participants should get it too |
+| Participant access to their own report | Participants hear the feedback on the call; only the employment specialist receives the written report. Decide whether participants should get it too |
 | Consent | The form has no consent step. Add one if your context requires it |
 
 **Assign an owner for these before real participants use the system.** They are policy decisions,
@@ -516,6 +516,8 @@ requires an application-level audit log, add one before production.
 | **Sweep** | The 15-minute job reclaiming lines provisioned for people who never called |
 | **Stage** | Progress checkpoint shown to the waiting participant: `accepted → researching → writing_interviewer → reserving_line → ready` |
 | **Cold path** | Form submit to phone number displayed. 90–140s |
+| **Employment specialist** | The staff member working with the participant. Chosen on the intake form; receives the written report |
+| **Coach voice** | The AI's own feedback persona once the interview ends. Not a staff member, and never presented as one |
 
 ### Repository layout
 
@@ -551,16 +553,16 @@ your environment, and your policies.
 
 | # | What to do | Why it matters | How |
 |---|---|---|---|
-| 1 | **Set your coach roster** | Every report goes to whichever address is selected on the form | Edit `ui/src/config/coaches.ts` or set `VITE_COACHES`. The on-screen placeholder warning clears on its own once you do |
+| 1 | **Set your employment specialist roster** | Every report goes to whichever address is selected on the form | Edit `ui/src/config/specialists.ts` or set `VITE_SPECIALISTS`. The on-screen placeholder warning clears on its own once you do |
 | 2 | **Replace the waiting-screen facts** with sourced facts about your organization | Participants read these while they wait, and someone will eventually check one | Edit `ui/src/config/facts.ts`. Cite every figure; mark computed ones as computed |
 | 3 | **Brand the intake form** | It ships unbranded on purpose | Add your icons to `ui/public/`, uncomment the icon tags in `ui/index.html`, set `theme-color` |
-| 4 | **Send reports from a service mailbox** | Every coach report carries the sender's address | Create the email credential while signed in as a shared or service mailbox, not a personal one |
+| 4 | **Send reports from a service mailbox** | Every employment specialist report carries the sender's address | Create the email credential while signed in as a shared or service mailbox, not a personal one |
 
 ### 9.2 Decide with your program staff
 
 | # | What to do | Why it matters | How |
 |---|---|---|---|
-| 5 | **Adopt a scoring rubric with a job coach** | The report is only as credible as the scoring behind it, and it should match how your coaches actually assess readiness | Work through the six `[COACH DECISION]` points in `prompts/rubric-DRAFT-for-coach-review.md` |
+| 5 | **Adopt a scoring rubric with an employment specialist** | The report is only as credible as the scoring behind it, and it should match how your employment specialists actually assess readiness | Work through the six `[SPECIALIST DECISION]` points in `prompts/rubric-DRAFT-for-specialist-review.md` |
 | 6 | **Choose a target interview length and question count** | `maxDurationSeconds: 1800` is a safety cutoff, not a target. Real calls on the reference deployment ran 3–7 minutes | Decide what a session should be, then state it in `prompts/architect-system.md` |
 | 7 | **Set retention and consent policy** (§7.4) | Transcripts hold whatever people disclose while nervous | Decide how long transcripts and recordings are kept, whether participants receive their own report, and whether the form needs a consent step; then implement it |
 
@@ -576,7 +578,7 @@ your environment, and your policies.
 
 | # | What to do | Why it matters | How |
 |---|---|---|---|
-| 11 | **Back up the database** (§6.4) | Transcripts are the record coaches work from, and losing them is permanent | Schedule `pg_dump`, export workflows with `tools/deployed.py export`, and set RPO/RTO targets |
+| 11 | **Back up the database** (§6.4) | Transcripts are the record employment specialists work from, and losing them is permanent | Schedule `pg_dump`, export workflows with `tools/deployed.py export`, and set RPO/RTO targets |
 | 12 | **Tune execution logging** | Each 3-second status poll is a logged n8n execution (about 35 per session), which buries real runs and shortens retention | Lengthen the poll interval, or stop saving successful executions for the status path |
 | 13 | **Confirm the schema after your first run** | `db/schema.sql` was rebuilt from the deployed queries rather than dumped from a live database | Run `pg_dump --schema-only` and diff it against `db/schema.sql` |
 | 14 | **Add an end-to-end test** | `tools/deployed.py check` and a UI test stub are what ship | Script the form → call → report run you perform by hand in SETUP step 10 |

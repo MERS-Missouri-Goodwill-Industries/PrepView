@@ -1,4 +1,4 @@
-// Pull everything the coach report needs out of the end-of-call payload.
+// Pull everything the employment specialist report needs out of the end-of-call payload.
 // Field paths are the ones observed on a real call (CLAUDE.md section 6), not assumed.
 const raw = $input.first().json.raw || {};
 const body = raw.body !== undefined ? raw.body : raw;
@@ -52,7 +52,7 @@ return [{
     sessionId: md.sessionId || null,
     participantName,
     firstName,
-    coachEmail: md.coachEmail || null,
+    specialistEmail: md.specialistEmail || null,
     jobTitle: md.jobTitle || 'the role',
     jobLink: md.jobLink || null,
     nervousAbout: md.nervousAbout || null,
@@ -72,8 +72,8 @@ return [{
     recordingUrl: msg.recordingUrl || (msg.artifact && msg.artifact.recordingUrl) || null,
     costTotal,
     tooShort,
-    // No coach selected means there is nowhere to send. Surfaced rather than thrown
+    // No employment specialist selected means there is nowhere to send. Surfaced rather than thrown
     // so teardown still runs and the failure is visible in the execution.
-    sendable: !!(md.coachEmail && transcript.length > 0)
+    sendable: !!(md.specialistEmail && transcript.length > 0)
   }
 }];

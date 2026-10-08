@@ -20,7 +20,7 @@
     "typeVersion": 2
   },
   {
-    "name": "Extract Feedback & Coach Notes",
+    "name": "Extract Feedback & Employment Specialist Notes",
     "type": "@n8n/n8n-nodes-langchain.agent",
     "typeVersion": 1.6
   },
@@ -40,7 +40,7 @@
     "typeVersion": 2
   },
   {
-    "name": "Format Coach Email",
+    "name": "Format Employment Specialist Email",
     "type": "n8n-nodes-base.code",
     "typeVersion": 2
   },
@@ -50,7 +50,7 @@
     "typeVersion": 2.2
   },
   {
-    "name": "Outlook - Send Coach Report",
+    "name": "Outlook - Send Employment Specialist Report",
     "type": "n8n-nodes-base.microsoftOutlook",
     "typeVersion": 2
   },

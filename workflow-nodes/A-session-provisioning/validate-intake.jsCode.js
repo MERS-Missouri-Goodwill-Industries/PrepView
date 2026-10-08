@@ -10,7 +10,7 @@ const participantName = s(b.participantName || b.name);
 const jobLink         = s(b.jobLink);
 const nervousAbout    = s(b.nervousAbout);
 const focusArea       = s(b.focusArea);
-const coachEmail      = s(b.coachEmail);
+const specialistEmail      = s(b.specialistEmail);
 const jobTitle        = s(b.jobTitle);
 // A pasted description takes priority over the link: no fetch needed, and it
 // works for listings that block bots or sit behind a login.
@@ -45,6 +45,6 @@ return [{
     missing,
     sessionId: uuid,
     createdAt: new Date().toISOString(),
-    participantName, firstName, jobLink, jobTitle, jobDescription, nervousAbout, focusArea, coachEmail, jobReport
+    participantName, firstName, jobLink, jobTitle, jobDescription, nervousAbout, focusArea, specialistEmail, jobReport
   }
 }];

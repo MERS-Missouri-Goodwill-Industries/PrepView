@@ -1,9 +1,9 @@
 import { ArrowLeft, Edit3, Send, Loader2 } from "lucide-react";
-import { coachByEmail } from "@/config/coaches";
+import { specialistByEmail } from "@/config/specialists";
 
 interface FormData {
   name: string;
-  coachEmail: string;
+  specialistEmail: string;
   jobLink: string;
   jobDescription: string;
   nervousAbout: string;
@@ -31,13 +31,13 @@ const ReviewScreen = ({
 }: ReviewScreenProps) => {
   if (!isVisible) return null;
 
-  const coach = coachByEmail(formData.coachEmail);
+  const specialist = specialistByEmail(formData.specialistEmail);
 
   const reviewItems = [
     { label: "Your name", value: formData.name, step: 1 },
     {
-      label: "Your job coach",
-      value: coach ? `${coach.name} (${coach.email})` : formData.coachEmail,
+      label: "Your employment specialist",
+      value: specialist ? `${specialist.name} (${specialist.email})` : formData.specialistEmail,
       step: 2,
     },
     {
