@@ -186,6 +186,11 @@ Things already learned the hard way, which the prompt now encodes:
 - **The AI is the interviewer, never the candidate.** It must not answer its own questions.
 - **Nerves, filler and false starts never lower a score.** An answer delivered imperfectly is still
   delivered.
+- **Vague answers get probed, short ones do not.** An answer that stays general ("I'm a people
+  person") gets up to two warm follow-ups asking for something specific, and a general claim is never
+  scored Strong. A brief answer with one real detail is specific enough and is left alone. The rule
+  lives in the architect prompt and is repeated in the Platform Delivery Rules, so every interviewer
+  carries it even if a generation drifts.
 
 Changing the number of worked examples it must write is the main latency lever, and it trades
 interview quality for speed. Make that trade deliberately, not accidentally.
