@@ -202,6 +202,14 @@ Things already learned the hard way, which the prompt now encodes:
   something specific; thin answers get a neutral "Okay" and the follow-up. Never "Great!" on every
   turn. The one unconditional piece of praise is the spoken feedback's opening, which always
   acknowledges that they got through the interview, whatever the score.
+- **The model has no private channel, so never ask it to keep anything "silently".** A reference
+  deployment once had its interviewer append its bookkeeping to a spoken turn ("...is two, commentary
+  none, need continue interview, no tool") because the prompt said "keep a silent tally." The only
+  place a model can write is its output, and in a voice system every word of output is spoken. The
+  architect now asks for no tally, notes, or tracking at all (the conversation in context is the
+  record), carries a "Nothing but speech" rule, and the Platform Delivery Rules repeat it as a
+  backstop. Do not reintroduce any instruction that asks the interviewer to track, note, score, or
+  label anything mid-interview, however "silently."
 
 Changing the number of worked examples it must write is the main latency lever, and it trades
 interview quality for speed. Make that trade deliberately, not accidentally.
