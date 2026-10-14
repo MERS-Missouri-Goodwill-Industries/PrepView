@@ -191,6 +191,17 @@ Things already learned the hard way, which the prompt now encodes:
   scored Strong. A brief answer with one real detail is specific enough and is left alone. The rule
   lives in the architect prompt and is repeated in the Platform Delivery Rules, so every interviewer
   carries it even if a generation drifts.
+- **Every nudge is built from the applicant's own words.** Never a generic "can you give more
+  detail." The interviewer repeats the specific thing they said and asks about the parts that stayed
+  general (what they actually did, what system or person was involved, what happened after), as one
+  conversational turn. That gives a nervous person a road to walk: each part of the follow-up is now
+  something they know they can talk about. The worked example in the architect prompt (a locked-out
+  user and a password reset) is the pattern. An anchored follow-up that names two or three parts of
+  the *same* story is one question, not a breach of the one-question-per-turn rule.
+- **Praise is earned, not automatic.** The interviewer acknowledges an answer only when it delivered
+  something specific; thin answers get a neutral "Okay" and the follow-up. Never "Great!" on every
+  turn. The one unconditional piece of praise is the spoken feedback's opening, which always
+  acknowledges that they got through the interview, whatever the score.
 
 Changing the number of worked examples it must write is the main latency lever, and it trades
 interview quality for speed. Make that trade deliberately, not accidentally.
